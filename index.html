@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Snake on Base</title>
+
+<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <style>
 body {
@@ -28,10 +30,24 @@ canvas {
   display: none;
 }
 
+#topbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 12px;
+  display: none;
+}
+
+#topbar button {
+  margin-left: 6px;
+  font-size: 10px;
+  padding: 4px 6px;
+}
+
 #score {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 8px;
+  left: 8px;
   display: none;
 }
 
@@ -90,22 +106,37 @@ button {
   <h2>🐍 Snake on Base</h2>
   <div>A simple onchain game built on Base.</div>
 
+  <div id="topbar">
+    <span id="addr"></span>
+    <button onclick="disconnect()">DISCONNECT</button>
+  </div>
+
   <div id="score">SCORE: 0</div>
   <canvas id="game" width="360" height="360"></canvas>
 
+  <!-- WALLET -->
   <div id="wallet" class="overlay">
-    <button id="connectBtn">CONNECT WALLET</button>
+    <button onclick="connectWallet()">CONNECT WALLET</button>
   </div>
 
+  <!-- MINT -->
+  <div id="mint" class="overlay" style="display:none;">
+    <p>Mint fee: ~0.1 USDC (paid in ETH)</p>
+    <button onclick="mint()">MINT</button>
+  </div>
+
+  <!-- MENU -->
   <div id="menu" class="overlay" style="display:none;">
     <button onclick="startGame()">PLAY</button>
   </div>
 
+  <!-- GAME OVER -->
   <div id="gameOver" class="overlay" style="display:none;">
     <h2>GAME OVER</h2>
     <button onclick="startGame()">PLAY AGAIN</button>
   </div>
 
+  <!-- CONTROLS -->
   <div id="controls">
     <div class="pad">
       <div></div>
@@ -122,4 +153,169 @@ button {
         SPEED
       </button>
 
-      <button class="ctr
+      <button class="ctrl" onclick="setDir(1,0)">➡️</button>
+
+      <div></div>
+      <button class="ctrl" onclick="setDir(0,1)">⬇️</button>
+      <div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* CONFIG */
+const CONTRACT_ADDRESS = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
+const MINT_PRICE_ETH = "0.00003"; // ~0.1 USDC
+
+const ABI = [
+  "function mint() payable",
+  "function balanceOf(address) view returns (uint256)"
+];
+
+/* WALLET */
+let provider, signer, contract, user;
+
+/* GAME */
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+const grid = 18;
+const size = canvas.width / grid;
+
+let snake, food, dx, dy, score, loopId;
+const normalSpeed = 300;
+const fastSpeed = 120;
+
+/* WALLET FLOW */
+async function connectWallet() {
+  if (!window.ethereum) return alert("MetaMask yok");
+
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  user = await signer.getAddress();
+
+  document.getElementById("addr").innerText =
+    user.slice(0,6) + "..." + user.slice(-4);
+
+  document.getElementById("topbar").style.display = "block";
+  document.getElementById("wallet").style.display = "none";
+
+  contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+  const bal = await contract.balanceOf(user);
+
+  if (bal.gt(0)) {
+    document.getElementById("menu").style.display = "flex";
+  } else {
+    document.getElementById("mint").style.display = "flex";
+  }
+}
+
+async function mint() {
+  const c = contract.connect(signer);
+  const tx = await c.mint({
+    value: ethers.utils.parseEther(MINT_PRICE_ETH)
+  });
+  await tx.wait();
+  document.getElementById("mint").style.display = "none";
+  document.getElementById("menu").style.display = "flex";
+}
+
+function disconnect() {
+  location.reload();
+}
+
+/* GAME */
+function startGame() {
+  document.getElementById("menu").style.display = "none";
+  document.getElementById("gameOver").style.display = "none";
+  canvas.style.display = "block";
+  document.getElementById("score").style.display = "block";
+  document.getElementById("controls").style.display = "block";
+
+  snake = [{x:9,y:9}];
+  dx = 1; dy = 0;
+  score = 0;
+  spawnFood();
+  updateScore();
+
+  clearInterval(loopId);
+  loopId = setInterval(loop, normalSpeed);
+}
+
+function speedUp() {
+  clearInterval(loopId);
+  loopId = setInterval(loop, fastSpeed);
+}
+
+function speedNormal() {
+  clearInterval(loopId);
+  loopId = setInterval(loop, normalSpeed);
+}
+
+function loop() {
+  const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+
+  if (
+    head.x < 0 || head.y < 0 ||
+    head.x >= grid || head.y >= grid ||
+    snake.some(s => s.x === head.x && s.y === head.y)
+  ) return endGame();
+
+  snake.unshift(head);
+
+  if (head.x === food.x && head.y === food.y) {
+    score++;
+    updateScore();
+    spawnFood();
+  } else snake.pop();
+
+  draw();
+}
+
+function draw() {
+  ctx.fillStyle = "#111";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.strokeStyle = "#1a1a1a";
+  for(let i=0;i<grid;i++){
+    ctx.beginPath();
+    ctx.moveTo(i*size,0);
+    ctx.lineTo(i*size,canvas.height);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0,i*size);
+    ctx.lineTo(canvas.width,i*size);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle = "#fff";
+  snake.forEach(s => ctx.fillRect(s.x*size, s.y*size, size-1, size-1));
+  ctx.fillRect(food.x*size, food.y*size, size-1, size-1);
+}
+
+function spawnFood() {
+  food = {x: Math.floor(Math.random()*grid), y: Math.floor(Math.random()*grid)};
+}
+
+function updateScore() {
+  document.getElementById("score").innerText = "SCORE: " + score;
+}
+
+function endGame() {
+  clearInterval(loopId);
+  document.getElementById("gameOver").style.display = "flex";
+}
+
+function setDir(x,y) {
+  if (x !== -dx || y !== -dy) { dx = x; dy = y; }
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key==="ArrowUp") setDir(0,-1);
+  if (e.key==="ArrowDown") setDir(0,1);
+  if (e.key==="ArrowLeft") setDir(-1,0);
+  if (e.key==="ArrowRight") setDir(1,0);
+});
+</script>
+</body>
+</html>
