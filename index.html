@@ -103,7 +103,7 @@ button {
   <!-- MINT -->
   <div id="mint" class="overlay" style="display:none;">
     <h3>Mint to Play</h3>
-    <p>Cost: 0.1 ETH</p>
+    <p>Cost: ~0.1 USDC (paid in ETH)</p>
     <button onclick="mint()">MINT</button>
     <p id="mintStatus"></p>
   </div>
@@ -121,8 +121,8 @@ button {
       <div></div>
 
       <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
-      <button class="ctrl boost" 
-        onmousedown="boostOn()" 
+      <button class="ctrl boost"
+        onmousedown="boostOn()"
         onmouseup="boostOff()">BOOST</button>
       <button class="ctrl" onclick="setDir(1,0)">➡️</button>
 
@@ -135,10 +135,10 @@ button {
 </div>
 
 <script>
-/* ====== WALLET ====== */
+/* ===== WALLET ===== */
 let provider, signer, user;
 
-const CONTRACT = "0xYOUR_CONTRACT_ADDRESS";
+const CONTRACT = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
 const ABI = [
   "function mint() payable"
 ];
@@ -170,18 +170,21 @@ async function mint() {
   try {
     const contract = new ethers.Contract(CONTRACT, ABI, signer);
     document.getElementById("mintStatus").innerText="Minting...";
+
     const tx = await contract.mint({
-      value: ethers.utils.parseEther("0.1")
+      value: ethers.utils.parseEther("0.00003")
     });
+
     await tx.wait();
+
     document.getElementById("mint").style.display="none";
     document.getElementById("menu").style.display="flex";
-  } catch(e) {
+  } catch (e) {
     document.getElementById("mintStatus").innerText="Mint failed";
   }
 }
 
-/* ====== GAME ====== */
+/* ===== GAME ===== */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 const grid = 18;
@@ -206,17 +209,26 @@ function startGame() {
 
 function loop() {
   const head={x:snake[0].x+dx,y:snake[0].y+dy};
-  if(head.x<0||head.y<0||head.x>=grid||head.y>=grid||
-     snake.some(s=>s.x===head.x&&s.y===head.y)){
+
+  if (
+    head.x<0||head.y<0||
+    head.x>=grid||head.y>=grid||
+    snake.some(s=>s.x===head.x&&s.y===head.y)
+  ){
     clearInterval(loopId);
     alert("Game Over");
     location.reload();
     return;
   }
+
   snake.unshift(head);
+
   if(head.x===food.x&&head.y===food.y){
     food=spawnFood();
-  } else snake.pop();
+  } else {
+    snake.pop();
+  }
+
   draw();
 }
 
@@ -229,7 +241,10 @@ function draw(){
 }
 
 function spawnFood(){
-  return {x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};
+  return {
+    x:Math.floor(Math.random()*grid),
+    y:Math.floor(Math.random()*grid)
+  };
 }
 
 function setDir(x,y){
