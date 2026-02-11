@@ -1,6 +1,151 @@
 <!DOCTYPE html>
-<html>
-  <body>
-    <h1>CALISIYOR</h1>
-  </body>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Snake Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.min.js"></script>
+
+  <style>
+    body {
+      margin: 0;
+      background: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #game {
+      background: #000;
+      display: none;
+      margin: 0 auto;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      margin: 10px;
+    }
+    #controls {
+      display: none;
+    }
+    .row button {
+      width: 80px;
+      height: 50px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h2>Snake Game</h2>
+
+<button id="connectBtn">Connect Wallet</button>
+<button id="mintBtn" style="display:none;">Mint Snake</button>
+
+<canvas id="game" width="300" height="300"></canvas>
+
+<div id="controls">
+  <div class="row">
+    <button onclick="setDir('up')">⬆️</button>
+  </div>
+  <div class="row">
+    <button onclick="setDir('left')">⬅️</button>
+    <button onclick="setDir('down')">⬇️</button>
+    <button onclick="setDir('right')">➡️</button>
+  </div>
+</div>
+
+<script>
+const CONTRACT_ADDRESS = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
+const ABI = [
+  "function balanceOf(address owner) view returns (uint256)",
+  "function mint() payable"
+];
+
+let provider, signer, contract;
+let dir = "right";
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let snake = [{x:150,y:150}];
+let food = {x:90,y:90};
+
+function draw() {
+  ctx.clearRect(0,0,300,300);
+  ctx.fillStyle = "lime";
+  snake.forEach(p => ctx.fillRect(p.x,p.y,10,10));
+  ctx.fillStyle = "red";
+  ctx.fillRect(food.x,food.y,10,10);
+}
+
+function move() {
+  let head = {...snake[0]};
+  if(dir==="right") head.x+=10;
+  if(dir==="left") head.x-=10;
+  if(dir==="up") head.y-=10;
+  if(dir==="down") head.y+=10;
+
+  if(head.x<0||head.y<0||head.x>=300||head.y>=300){
+    snake=[{x:150,y:150}];
+  }
+
+  snake.unshift(head);
+
+  if(head.x===food.x && head.y===food.y){
+    food = {
+      x: Math.floor(Math.random()*30)*10,
+      y: Math.floor(Math.random()*30)*10
+    };
+  } else {
+    snake.pop();
+  }
+
+  draw();
+}
+
+function setDir(d){ dir=d; }
+
+async function connectWallet(){
+  if(!window.ethereum){
+    alert("Wallet bulunamadı");
+    return;
+  }
+
+  provider = new ethers.providers.Web3Provider(window.ethereum);
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+
+  const address = await signer.getAddress();
+  const balance = await contract.balanceOf(address);
+
+  document.getElementById("connectBtn").style.display="none";
+
+  if(balance.gt(0)){
+    startGame();
+  } else {
+    document.getElementById("mintBtn").style.display="inline-block";
+  }
+}
+
+async function mint(){
+  await contract.mint({
+    value: ethers.utils.parseEther("0.00003")
+  });
+  startGame();
+}
+
+function startGame(){
+  canvas.style.display="block";
+  document.getElementById("controls").style.display="block";
+  document.getElementById("mintBtn").style.display="none";
+  setInterval(move,150);
+}
+
+document.getElementById("connectBtn").onclick = connectWallet;
+document.getElementById("mintBtn").onclick = mint;
+</script>
+
+</body>
 </html>
