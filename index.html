@@ -2,16 +2,14 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>WalletConnect Test</title>
+<title>Snake on Base</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- WalletConnect + Web3Modal -->
-<script src="https://unpkg.com/@walletconnect/web3-provider@1.8.0/dist/umd/index.min.js"></script>
-<script src="https://unpkg.com/web3modal@1.9.12/dist/index.js"></script>
-<script src="https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
 
 <style>
-body {
+body{
+  margin:0;
   background:#0b0b0b;
   color:#fff;
   font-family:Arial;
@@ -20,58 +18,185 @@ body {
   align-items:center;
   height:100vh;
 }
-button {
-  padding:14px 28px;
-  font-size:18px;
-  border:none;
-  border-radius:8px;
-  cursor:pointer;
+#container{width:360px;position:relative;text-align:center}
+canvas{display:none;background:#111}
+.overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center
 }
+button{
+  padding:12px 24px;
+  border:none;border-radius:8px;
+  font-size:16px;cursor:pointer
+}
+#topbar{
+  position:absolute;top:8px;right:8px;
+  font-size:12px;display:none
+}
+#controls{display:none;margin-top:10px}
+.pad{
+  display:grid;
+  grid-template-columns:60px 60px 60px;
+  grid-template-rows:60px 60px 60px;
+  gap:6px;justify-content:center
+}
+.ctrl{
+  background:#1a1a1a;color:#fff;
+  font-size:22px;border-radius:10px
+}
+.boost{background:#333;font-size:14px}
 </style>
 </head>
 
 <body>
+<div id="container">
 
-<div>
-  <button id="connect">CONNECT WALLET</button>
-  <p id="status"></p>
+<h2>🐍 Snake on Base</h2>
+
+<div id="topbar">
+  <span id="addr"></span>
+  <button onclick="location.reload()">✕</button>
+</div>
+
+<canvas id="game" width="360" height="360"></canvas>
+
+<!-- CONNECT -->
+<div id="connect" class="overlay">
+  <button onclick="connectWallet()">CONNECT WALLET</button>
+</div>
+
+<!-- MINT -->
+<div id="mint" class="overlay" style="display:none">
+  <h3>Mint to Play</h3>
+  <p>Cost: 0.00003 ETH</p>
+  <button onclick="mint()">MINT</button>
+  <p id="mintStatus"></p>
+</div>
+
+<!-- MENU -->
+<div id="menu" class="overlay" style="display:none">
+  <button onclick="startGame()">PLAY</button>
+</div>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <div class="pad">
+    <div></div>
+    <button class="ctrl" onclick="setDir(0,-1)">⬆️</button>
+    <div></div>
+
+    <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
+    <button class="ctrl boost"
+      onmousedown="boostOn()"
+      onmouseup="boostOff()">BOOST</button>
+    <button class="ctrl" onclick="setDir(1,0)">➡️</button>
+
+    <div></div>
+    <button class="ctrl" onclick="setDir(0,1)">⬇️</button>
+    <div></div>
+  </div>
+</div>
+
 </div>
 
 <script>
-let provider;
-let signer;
+let provider, signer, user;
 
-const providerOptions = {
-  walletconnect: {
-    package: window.WalletConnectProvider.default,
-    options: {
-      rpc: {
-        8453: "https://mainnet.base.org"
-      }
-    }
+/* ===== WALLET ===== */
+async function connectWallet(){
+  if(!window.ethereum){
+    alert("Wallet bulunamadı");
+    return;
   }
-};
 
-const web3Modal = new window.Web3Modal.default({
-  cacheProvider: false,
-  providerOptions
-});
+  provider = new ethers.providers.Web3Provider(window.ethereum);
 
-document.getElementById("connect").onclick = async () => {
-  try {
-    const instance = await web3Modal.connect();
-    provider = new ethers.providers.Web3Provider(instance);
-    signer = provider.getSigner();
-    const address = await signer.getAddress();
+  await provider.send("eth_requestAccounts", []);
+  signer = provider.getSigner();
+  user = await signer.getAddress();
 
-    document.getElementById("status").innerText =
-      "Connected: " + address.slice(0,6) + "..." + address.slice(-4);
-  } catch (err) {
-    document.getElementById("status").innerText = "Connection failed";
-    console.error(err);
+  // ZORUNLU İMZA → popup açtırır
+  await signer.signMessage("Snake on Base login");
+
+  document.getElementById("addr").innerText =
+    user.slice(0,6)+"..."+user.slice(-4);
+
+  document.getElementById("connect").style.display="none";
+  document.getElementById("topbar").style.display="block";
+  document.getElementById("mint").style.display="flex";
+}
+
+/* ===== MINT ===== */
+const CONTRACT = "0xYOUR_CONTRACT_ADDRESS";
+const ABI = ["function mint() payable"];
+
+async function mint(){
+  try{
+    const c = new ethers.Contract(CONTRACT, ABI, signer);
+    document.getElementById("mintStatus").innerText="Minting...";
+    const tx = await c.mint({
+      value: ethers.utils.parseEther("0.00003")
+    });
+    await tx.wait();
+    document.getElementById("mint").style.display="none";
+    document.getElementById("menu").style.display="flex";
+  }catch{
+    document.getElementById("mintStatus").innerText="Mint failed";
   }
-};
+}
+
+/* ===== GAME ===== */
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const grid=18;
+const size=canvas.width/grid;
+
+let snake,food,dx,dy,loopId;
+let speed=300;
+
+function startGame(){
+  document.getElementById("menu").style.display="none";
+  canvas.style.display="block";
+  document.getElementById("controls").style.display="block";
+
+  snake=[{x:9,y:9}];
+  dx=1;dy=0;
+  food=spawnFood();
+
+  clearInterval(loopId);
+  loopId=setInterval(loop,speed);
+}
+
+function loop(){
+  const h={x:snake[0].x+dx,y:snake[0].y+dy};
+  if(h.x<0||h.y<0||h.x>=grid||h.y>=grid||
+     snake.some(s=>s.x===h.x&&s.y===h.y)){
+    clearInterval(loopId);
+    location.reload();
+    return;
+  }
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y) food=spawnFood();
+  else snake.pop();
+  draw();
+}
+
+function draw(){
+  ctx.fillStyle="#111";
+  ctx.fillRect(0,0,360,360);
+  ctx.fillStyle="#fff";
+  snake.forEach(s=>ctx.fillRect(s.x*size,s.y*size,size-1,size-1));
+  ctx.fillRect(food.x*size,food.y*size,size-1,size-1);
+}
+
+function spawnFood(){
+  return{x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};
+}
+function setDir(x,y){if(x!==-dx||y!==-dy){dx=x;dy=y}}
+function boostOn(){clearInterval(loopId);loopId=setInterval(loop,120)}
+function boostOff(){clearInterval(loopId);loopId=setInterval(loop,speed)}
 </script>
-
 </body>
 </html>
