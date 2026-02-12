@@ -1,223 +1,283 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<title>Snake on Base</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+import React, { useState, useEffect, useRef } from 'react';
 
-<script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+export default function SnakeGame() {
+  const canvasRef = useRef(null);
+  const [score, setScore] = useState(0);
+  const [gameOver, setGameOver] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  
+  const gridSize = 20;
+  const baseSpeed = 300;
+  const boostSpeed = 100;
+  
+  const gameState = useRef({
+    snake: [{ x: 10, y: 10 }],
+    food: { x: 15, y: 15 },
+    direction: { x: 1, y: 0 },
+    nextDirection: { x: 1, y: 0 },
+    speed: baseSpeed,
+    isBoosting: false
+  });
 
-<style>
-body{
-  margin:0;
-  background:#0b0b0b;
-  color:#fff;
-  font-family:Arial,sans-serif;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
-}
-#container{width:360px;position:relative;text-align:center;}
-canvas{display:none;background:#111;}
-.overlay{
-  position:absolute;inset:0;
-  background:rgba(0,0,0,.85);
-  display:flex;flex-direction:column;
-  justify-content:center;align-items:center;
-}
-button{
-  padding:12px 24px;
-  border:none;border-radius:8px;
-  font-size:16px;cursor:pointer;
-}
-#topbar{
-  position:absolute;top:8px;right:8px;
-  font-size:12px;display:none;
-}
-#controls{display:none;margin-top:10px;}
-.pad{
-  display:grid;
-  grid-template-columns:60px 60px 60px;
-  grid-template-rows:60px 60px 60px;
-  gap:6px;justify-content:center;
-}
-.ctrl{background:#1a1a1a;color:#fff;font-size:22px;border-radius:10px;}
-.boost{background:#333;font-size:14px;}
-</style>
-</head>
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    const cellSize = canvas.width / gridSize;
 
-<body>
-<div id="container">
+    const drawGame = () => {
+      // Arka plan
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-<h2>🐍 Snake on Base</h2>
+      // Grid çizgileri
+      ctx.strokeStyle = '#16213e';
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= gridSize; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * cellSize, 0);
+        ctx.lineTo(i * cellSize, canvas.height);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(0, i * cellSize);
+        ctx.lineTo(canvas.width, i * cellSize);
+        ctx.stroke();
+      }
 
-<div id="topbar">
-  <span id="addr"></span>
-  <button onclick="location.reload()">✕</button>
-</div>
-
-<canvas id="game" width="360" height="360"></canvas>
-
-<!-- CONNECT -->
-<div id="connect" class="overlay">
-  <button onclick="connectWallet()">CONNECT WALLET</button>
-</div>
-
-<!-- MINT -->
-<div id="mint" class="overlay" style="display:none;">
-  <h3>Mint to Play</h3>
-  <p>Cost: 0.00003 ETH</p>
-  <button onclick="mint()">MINT</button>
-  <p id="mintStatus"></p>
-</div>
-
-<!-- MENU -->
-<div id="menu" class="overlay" style="display:none;">
-  <button onclick="startGame()">PLAY</button>
-</div>
-
-<!-- CONTROLS -->
-<div id="controls">
-  <div class="pad">
-    <div></div>
-    <button class="ctrl" onclick="setDir(0,-1)">⬆️</button>
-    <div></div>
-
-    <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
-    <button class="ctrl boost"
-      onmousedown="boostOn()"
-      onmouseup="boostOff()">BOOST</button>
-    <button class="ctrl" onclick="setDir(1,0)">➡️</button>
-
-    <div></div>
-    <button class="ctrl" onclick="setDir(0,1)">⬇️</button>
-    <div></div>
-  </div>
-</div>
-
-</div>
-
-<script>
-/* ===== CONFIG ===== */
-const CONTRACT_ADDRESS = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
-const PRICE = "0.00003";
-const ABI = [
-  "function mint() payable",
-  "function hasMinted(address) view returns (bool)"
-];
-
-let provider, signer, contract, user;
-
-/* ===== WALLET ===== */
-async function connectWallet(){
-  if(!window.ethereum){
-    alert("Wallet bulunamadı");
-    return;
-  }
-
-  provider = new ethers.providers.Web3Provider(window.ethereum);
-  await provider.send("eth_requestAccounts", []);
-  signer = provider.getSigner();
-  user = await signer.getAddress();
-
-  const network = await provider.getNetwork();
-  if(network.chainId !== 8453){
-    try{
-      await window.ethereum.request({
-        method:"wallet_switchEthereumChain",
-        params:[{chainId:"0x2105"}]
+      // Yılan
+      gameState.current.snake.forEach((segment, index) => {
+        ctx.fillStyle = index === 0 ? '#00ff41' : '#00cc33';
+        ctx.fillRect(
+          segment.x * cellSize + 1,
+          segment.y * cellSize + 1,
+          cellSize - 2,
+          cellSize - 2
+        );
+        
+        // Yılan başı gözleri
+        if (index === 0) {
+          ctx.fillStyle = '#000';
+          const eyeSize = cellSize / 6;
+          const eyeOffset = cellSize / 4;
+          ctx.fillRect(
+            segment.x * cellSize + eyeOffset,
+            segment.y * cellSize + eyeOffset,
+            eyeSize,
+            eyeSize
+          );
+          ctx.fillRect(
+            segment.x * cellSize + cellSize - eyeOffset - eyeSize,
+            segment.y * cellSize + eyeOffset,
+            eyeSize,
+            eyeSize
+          );
+        }
       });
-    }catch{
-      alert("Lütfen Base ağına geç");
+
+      // Yem
+      ctx.fillStyle = '#ff0040';
+      ctx.beginPath();
+      ctx.arc(
+        gameState.current.food.x * cellSize + cellSize / 2,
+        gameState.current.food.y * cellSize + cellSize / 2,
+        cellSize / 2 - 2,
+        0,
+        Math.PI * 2
+      );
+      ctx.fill();
+    };
+
+    drawGame();
+  }, [gameStarted, score, gameOver]);
+
+  useEffect(() => {
+    if (!gameStarted || gameOver) return;
+
+    const gameLoop = setInterval(() => {
+      const state = gameState.current;
+      
+      // Yönü güncelle
+      state.direction = state.nextDirection;
+
+      // Yeni baş pozisyonu
+      const newHead = {
+        x: state.snake[0].x + state.direction.x,
+        y: state.snake[0].y + state.direction.y
+      };
+
+      // Duvar kontrolü
+      if (newHead.x < 0 || newHead.x >= gridSize || 
+          newHead.y < 0 || newHead.y >= gridSize) {
+        setGameOver(true);
+        return;
+      }
+
+      // Kendine çarpma kontrolü
+      if (state.snake.some(segment => 
+        segment.x === newHead.x && segment.y === newHead.y
+      )) {
+        setGameOver(true);
+        return;
+      }
+
+      // Yılanı hareket ettir
+      state.snake.unshift(newHead);
+
+      // Yem yeme kontrolü
+      if (newHead.x === state.food.x && newHead.y === state.food.y) {
+        setScore(prev => prev + 10);
+        // Yeni yem oluştur
+        let newFood;
+        do {
+          newFood = {
+            x: Math.floor(Math.random() * gridSize),
+            y: Math.floor(Math.random() * gridSize)
+          };
+        } while (state.snake.some(segment => 
+          segment.x === newFood.x && segment.y === newFood.y
+        ));
+        state.food = newFood;
+      } else {
+        state.snake.pop();
+      }
+
+      // Çizimi tetikle
+      setScore(prev => prev);
+    }, state.speed);
+
+    return () => clearInterval(gameLoop);
+  }, [gameStarted, gameOver]);
+
+  const changeDirection = (newDir) => {
+    const state = gameState.current;
+    // Ters yöne gitmeyi engelle
+    if (state.direction.x + newDir.x === 0 && 
+        state.direction.y + newDir.y === 0) {
       return;
     }
-  }
+    state.nextDirection = newDir;
+  };
 
-  contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+  const startBoost = () => {
+    gameState.current.speed = boostSpeed;
+    gameState.current.isBoosting = true;
+  };
 
-  document.getElementById("addr").innerText =
-    user.slice(0,6)+"..."+user.slice(-4);
+  const stopBoost = () => {
+    gameState.current.speed = baseSpeed;
+    gameState.current.isBoosting = false;
+  };
 
-  document.getElementById("connect").style.display="none";
-  document.getElementById("topbar").style.display="block";
-  document.getElementById("mint").style.display="flex";
+  const startGame = () => {
+    gameState.current = {
+      snake: [{ x: 10, y: 10 }],
+      food: { x: 15, y: 15 },
+      direction: { x: 1, y: 0 },
+      nextDirection: { x: 1, y: 0 },
+      speed: baseSpeed,
+      isBoosting: false
+    };
+    setScore(0);
+    setGameOver(false);
+    setGameStarted(true);
+  };
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+      {/* Skor Tablosu */}
+      <div className="absolute top-4 right-4 bg-gray-800 border-2 border-green-500 rounded-lg p-4 shadow-lg">
+        <div className="text-green-400 text-sm font-semibold mb-1">SKOR</div>
+        <div className="text-white text-3xl font-bold">{score}</div>
+      </div>
+
+      {/* Oyun Alanı */}
+      <div className="relative">
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={400}
+          className="border-4 border-green-500 rounded-lg shadow-2xl"
+        />
+        
+        {/* Başlangıç/Game Over Ekranı */}
+        {(!gameStarted || gameOver) && (
+          <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center rounded-lg">
+            <div className="text-center">
+              {gameOver && (
+                <>
+                  <div className="text-red-500 text-4xl font-bold mb-4">GAME OVER</div>
+                  <div className="text-white text-2xl mb-6">Skor: {score}</div>
+                </>
+              )}
+              {!gameStarted && !gameOver && (
+                <div className="text-green-400 text-4xl font-bold mb-6">YILAN OYUNU</div>
+              )}
+              <button
+                onClick={startGame}
+                className="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-xl transition-colors"
+              >
+                {gameOver ? 'Tekrar Oyna' : 'Başla'}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Kontrol Tuşları */}
+      <div className="mt-8 relative">
+        <div className="grid grid-cols-3 gap-2">
+          {/* Üst sıra */}
+          <div></div>
+          <button
+            onClick={() => changeDirection({ x: 0, y: -1 })}
+            className="w-16 h-16 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-lg border-2 border-gray-500 transition-colors"
+          >
+            ▲
+          </button>
+          <div></div>
+          
+          {/* Orta sıra */}
+          <button
+            onClick={() => changeDirection({ x: -1, y: 0 })}
+            className="w-16 h-16 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-lg border-2 border-gray-500 transition-colors"
+          >
+            ◄
+          </button>
+          <button
+            onMouseDown={startBoost}
+            onMouseUp={stopBoost}
+            onMouseLeave={stopBoost}
+            onTouchStart={startBoost}
+            onTouchEnd={stopBoost}
+            className="w-16 h-16 bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-700 text-white font-bold rounded-lg shadow-lg border-2 border-yellow-500 transition-colors"
+          >
+            ⚡
+          </button>
+          <button
+            onClick={() => changeDirection({ x: 1, y: 0 })}
+            className="w-16 h-16 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-lg border-2 border-gray-500 transition-colors"
+          >
+            ►
+          </button>
+          
+          {/* Alt sıra */}
+          <div></div>
+          <button
+            onClick={() => changeDirection({ x: 0, y: 1 })}
+            className="w-16 h-16 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-lg border-2 border-gray-500 transition-colors"
+          >
+            ▼
+          </button>
+          <div></div>
+        </div>
+      </div>
+
+      {/* Açıklama */}
+      <div className="mt-6 text-gray-400 text-center">
+        <div className="text-sm">Normal Hız: 300ms | Hızlı Hız: 100ms</div>
+        <div className="text-xs mt-2">⚡ tuşuna basılı tutarak hızlan!</div>
+      </div>
+    </div>
+  );
 }
-
-async function mint(){
-  const status = document.getElementById("mintStatus");
-  try{
-    const minted = await contract.hasMinted(user);
-    if(minted){
-      status.innerText="Already minted";
-      return;
-    }
-
-    status.innerText="Minting...";
-    const tx = await contract.mint({
-      value: ethers.utils.parseEther(PRICE)
-    });
-    await tx.wait();
-
-    document.getElementById("mint").style.display="none";
-    document.getElementById("menu").style.display="flex";
-  }catch(e){
-    console.error(e);
-    status.innerText="Mint failed";
-  }
-}
-
-/* ===== GAME ===== */
-const canvas=document.getElementById("game");
-const ctx=canvas.getContext("2d");
-const grid=18;
-const size=canvas.width/grid;
-
-let snake,food,dx,dy,loopId;
-let speed=300;
-
-function startGame(){
-  document.getElementById("menu").style.display="none";
-  canvas.style.display="block";
-  document.getElementById("controls").style.display="block";
-
-  snake=[{x:9,y:9}];
-  dx=1;dy=0;
-  food=spawnFood();
-
-  clearInterval(loopId);
-  loopId=setInterval(loop,speed);
-}
-
-function loop(){
-  const head={x:snake[0].x+dx,y:snake[0].y+dy};
-  if(head.x<0||head.y<0||head.x>=grid||head.y>=grid||
-     snake.some(s=>s.x===head.x&&s.y===head.y)){
-    clearInterval(loopId);
-    alert("Game Over");
-    location.reload();
-    return;
-  }
-  snake.unshift(head);
-  if(head.x===food.x&&head.y===food.y) food=spawnFood();
-  else snake.pop();
-  draw();
-}
-
-function draw(){
-  ctx.fillStyle="#111";
-  ctx.fillRect(0,0,360,360);
-  ctx.fillStyle="#fff";
-  snake.forEach(s=>ctx.fillRect(s.x*size,s.y*size,size-1,size-1));
-  ctx.fillRect(food.x*size,food.y*size,size-1,size-1);
-}
-
-function spawnFood(){
-  return {x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};
-}
-function setDir(x,y){if(x!==-dx||y!==-dy){dx=x;dy=y;}}
-function boostOn(){clearInterval(loopId);loopId=setInterval(loop,120);}
-function boostOff(){clearInterval(loopId);loopId=setInterval(loop,speed);}
-</script>
-</body>
-</html>
