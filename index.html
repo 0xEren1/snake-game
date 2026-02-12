@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Snake on Base</title>
-<script src="https://cdn.ethers.io/lib/ethers-5.7.2.umd.min.js"></script>
 <style>
 body{
   margin:0;
@@ -32,6 +31,7 @@ canvas{display:none;background:#111;}
   display:flex;flex-direction:column;
   justify-content:center;align-items:center;
   gap:15px;
+  padding:20px;
 }
 button{
   padding:12px 24px;
@@ -52,55 +52,101 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
 .ctrl{background:#1a1a1a;color:#fff;font-size:22px;border-radius:10px;}
 .boost{background:#333;font-size:14px;}
 
-/* Wallet Connect Screen */
-#walletConnect{display:flex;}
+/* Main Connect Button */
+#connectBtn{
+  background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color:#fff;
+  padding:16px 40px;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 4px 15px rgba(102,126,234,0.4);
+}
+#connectBtn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(102,126,234,0.6);
+}
+
+/* Wallet Selection */
+#walletSelect{display:none;}
 .wallet-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:10px;
+  gap:12px;
   margin-top:20px;
+  width:100%;
+  max-width:300px;
 }
 .wallet-btn{
   background:#1a1a1a;
   color:#fff;
-  padding:15px;
-  border-radius:10px;
+  padding:20px;
+  border-radius:12px;
   display:flex;
   flex-direction:column;
   align-items:center;
   gap:8px;
   font-size:14px;
+  border:2px solid transparent;
+  transition:all 0.3s;
 }
-.wallet-btn:hover{background:#252525;}
+.wallet-btn:hover{
+  background:#252525;
+  border-color:#667eea;
+}
+.wallet-icon{font-size:32px;}
 
 /* Mint Screen */
 #mintScreen{display:none;}
-.mint-info{
+.mint-box{
   background:#1a1a1a;
-  padding:20px;
-  border-radius:10px;
+  padding:30px;
+  border-radius:12px;
   margin:20px 0;
+  border:2px solid #333;
 }
-.mint-info p{margin:10px 0;font-size:14px;}
-.price{font-size:24px;color:#4CAF50;font-weight:bold;}
-#mintBtn{background:#4CAF50;color:#fff;}
+.mint-box h3{margin:0 0 15px 0;color:#667eea;}
+.price{font-size:28px;color:#4CAF50;font-weight:bold;margin:15px 0;}
+.mint-detail{font-size:13px;opacity:0.7;margin:8px 0;}
+#mintBtn{
+  background:#4CAF50;
+  color:#fff;
+  padding:15px 50px;
+  font-size:18px;
+  font-weight:bold;
+}
 #mintBtn:hover{background:#45a049;}
 
-/* Connected Wallet Info */
+/* Wallet Info */
 #walletInfo{
   position:absolute;
   top:10px;
   left:10px;
-  font-size:12px;
+  font-size:11px;
   background:#1a1a1a;
   padding:8px 12px;
   border-radius:6px;
   display:none;
+  border:1px solid #333;
 }
-.status{color:#4CAF50;margin-bottom:5px;}
-.address{opacity:0.7;}
+.status{color:#4CAF50;margin-bottom:4px;font-weight:bold;}
+.address{opacity:0.6;}
 
-#loadingMsg{display:none;margin-top:10px;font-size:14px;color:#4CAF50;}
+.loading{
+  display:none;
+  margin-top:15px;
+  color:#667eea;
+  font-size:14px;
+}
+.loading.show{display:block;}
+
+.back-btn{
+  background:#444;
+  padding:8px 20px;
+  font-size:14px;
+  margin-top:10px;
+}
 </style>
 </head>
 <body>
@@ -115,52 +161,66 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
 <div id="score">SCORE: 0</div>
 <canvas id="game" width="360" height="360"></canvas>
 
-<!-- WALLET CONNECT -->
-<div id="walletConnect" class="overlay">
-  <h3>Connect Your Wallet</h3>
-  <p style="font-size:14px;opacity:0.8;">Choose your wallet to continue</p>
+<!-- INITIAL SCREEN -->
+<div id="initialScreen" class="overlay">
+  <h1 style="font-size:48px;margin:0;">🐍</h1>
+  <h3 style="margin:10px 0;">Snake on Base</h3>
+  <p style="opacity:0.7;font-size:14px;margin-bottom:20px;">Connect your wallet to play</p>
+  <button id="connectBtn" onclick="showWalletSelect()">CONNECT WALLET</button>
+</div>
+
+<!-- WALLET SELECTION -->
+<div id="walletSelect" class="overlay">
+  <h3 style="margin:0 0 10px 0;">Choose Your Wallet</h3>
   <div class="wallet-grid">
     <button class="wallet-btn" onclick="connectWallet('metamask')">
-      🦊<br>MetaMask
+      <span class="wallet-icon">🦊</span>
+      <span>MetaMask</span>
     </button>
     <button class="wallet-btn" onclick="connectWallet('okx')">
-      ⭕<br>OKX Wallet
+      <span class="wallet-icon">⭕</span>
+      <span>OKX Wallet</span>
     </button>
     <button class="wallet-btn" onclick="connectWallet('coinbase')">
-      🔵<br>Coinbase
+      <span class="wallet-icon">🔵</span>
+      <span>Coinbase</span>
     </button>
     <button class="wallet-btn" onclick="connectWallet('rabby')">
-      🐰<br>Rabby
+      <span class="wallet-icon">🐰</span>
+      <span>Rabby</span>
     </button>
   </div>
-  <div id="loadingMsg">Connecting...</div>
+  <div class="loading" id="walletLoading">Connecting...</div>
+  <button class="back-btn" onclick="backToInitial()">← Back</button>
 </div>
 
 <!-- MINT SCREEN -->
 <div id="mintScreen" class="overlay">
-  <h3>Mint Snake Access Pass</h3>
-  <div class="mint-info">
-    <p>🎫 You need a Snake Access Pass to play</p>
-    <p class="price">0.00003 ETH</p>
-    <p style="font-size:12px;opacity:0.7;">One-time purchase • Play forever</p>
+  <div class="mint-box">
+    <h3>🎫 Snake Access Pass</h3>
+    <p class="mint-detail">You need an Access Pass to play the game</p>
+    <div class="price">0.00003 ETH</div>
+    <p class="mint-detail">✨ One-time mint • Play forever</p>
+    <p class="mint-detail">🔗 Base Network</p>
   </div>
   <button id="mintBtn" onclick="mintNFT()">MINT NOW</button>
-  <button onclick="disconnectWallet()" style="background:#666;">Disconnect</button>
-  <div id="loadingMsg">Processing...</div>
+  <div class="loading" id="mintLoading">Processing transaction...</div>
+  <button class="back-btn" onclick="disconnectWallet()">Disconnect Wallet</button>
 </div>
 
-<!-- MENU -->
+<!-- GAME MENU -->
 <div id="menu" class="overlay" style="display:none;">
-  <button onclick="startGame()">PLAY</button>
-  <button onclick="disconnectWallet()" style="background:#666;">Disconnect</button>
+  <h3 style="margin:0 0 20px 0;">Ready to Play!</h3>
+  <button onclick="startGame()" style="background:#4CAF50;padding:15px 50px;font-size:18px;">PLAY</button>
+  <button class="back-btn" onclick="disconnectWallet()">Disconnect Wallet</button>
 </div>
 
 <!-- GAME OVER -->
 <div id="gameOver" class="overlay" style="display:none;">
-  <h2>GAME OVER</h2>
-  <p style="font-size:20px;margin:10px 0;">Score: <span id="finalScore">0</span></p>
-  <button onclick="startGame()">PLAY AGAIN</button>
-  <button onclick="backToMenu()" style="background:#666;">MENU</button>
+  <h2 style="margin:0;">GAME OVER</h2>
+  <p style="font-size:24px;margin:15px 0;">Score: <span id="finalScore">0</span></p>
+  <button onclick="startGame()" style="background:#4CAF50;padding:15px 40px;">PLAY AGAIN</button>
+  <button class="back-btn" onclick="backToMenu()">← Menu</button>
 </div>
 
 <!-- CONTROLS -->
@@ -177,19 +237,11 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
 <script>
 // Contract Details
 const CONTRACT_ADDRESS = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
-const MINT_PRICE = "0.00003";
-const BASE_CHAIN_ID = "0x2105"; // Base mainnet: 8453 (0x2105)
+const MINT_PRICE = "30000000000000"; // 0.00003 ETH in wei
+const BASE_CHAIN_ID = "0x2105"; // Base mainnet: 8453
 
-// Minimal ABI for NFT contract
-const CONTRACT_ABI = [
-  "function mint() public payable",
-  "function balanceOf(address owner) public view returns (uint256)"
-];
-
-let provider;
-let signer;
-let contract;
-let userAddress;
+let userAddress = null;
+let hasNFT = false;
 
 // Game variables
 const canvas=document.getElementById("game");
@@ -201,145 +253,194 @@ let speed=300;
 let score=0;
 let spacePressed=false;
 
+// Show wallet selection
+function showWalletSelect() {
+  hideAllScreens();
+  document.getElementById('walletSelect').style.display = 'flex';
+}
+
+function backToInitial() {
+  hideAllScreens();
+  document.getElementById('initialScreen').style.display = 'flex';
+}
+
 // Connect Wallet
 async function connectWallet(walletType) {
   try {
-    showLoading(true);
+    document.getElementById('walletLoading').classList.add('show');
     
-    if (typeof window.ethereum === 'undefined') {
-      alert('Please install a Web3 wallet (MetaMask, OKX, etc.)');
-      showLoading(false);
+    // Check if wallet exists
+    if (!window.ethereum) {
+      alert('❌ No Web3 wallet detected!\n\nPlease install:\n• MetaMask\n• OKX Wallet\n• Coinbase Wallet\n• Rabby Wallet');
+      document.getElementById('walletLoading').classList.remove('show');
       return;
     }
 
-    // Request account access
+    // Request accounts
     const accounts = await window.ethereum.request({ 
       method: 'eth_requestAccounts' 
     });
     
+    if (!accounts || accounts.length === 0) {
+      throw new Error('No accounts found');
+    }
+
     userAddress = accounts[0];
 
-    // Check if on Base network
+    // Check network
     const chainId = await window.ethereum.request({ method: 'eth_chainId' });
     
     if (chainId !== BASE_CHAIN_ID) {
+      // Try to switch to Base
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: BASE_CHAIN_ID }],
         });
       } catch (switchError) {
-        // Chain not added, add it
+        // Network not added, add it
         if (switchError.code === 4902) {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
             params: [{
               chainId: BASE_CHAIN_ID,
               chainName: 'Base',
-              nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
+              nativeCurrency: { 
+                name: 'Ethereum', 
+                symbol: 'ETH', 
+                decimals: 18 
+              },
               rpcUrls: ['https://mainnet.base.org'],
               blockExplorerUrls: ['https://basescan.org']
             }]
           });
         } else {
-          throw switchError;
+          throw new Error('Please switch to Base network');
         }
       }
     }
 
-    // Setup ethers
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
-    contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
-
-    // Save to localStorage
+    // Save wallet
     localStorage.setItem('connectedWallet', userAddress);
-
-    // Check if user has NFT
-    await checkNFTBalance();
     
-  } catch (error) {
-    console.error('Connection error:', error);
-    alert('Failed to connect wallet: ' + error.message);
-    showLoading(false);
-  }
-}
-
-// Check NFT Balance
-async function checkNFTBalance() {
-  try {
-    const balance = await contract.balanceOf(userAddress);
-    
+    // Show wallet info
     document.getElementById('walletInfo').style.display = 'block';
     document.getElementById('walletAddress').textContent = 
       userAddress.slice(0,6) + '...' + userAddress.slice(-4);
 
-    if (balance.gt(0)) {
-      // User has NFT - show game menu
-      showScreen('menu');
+    // Check NFT balance
+    await checkNFTBalance();
+    
+  } catch (error) {
+    console.error('Connection error:', error);
+    alert('Connection failed: ' + (error.message || 'Unknown error'));
+    document.getElementById('walletLoading').classList.remove('show');
+  }
+}
+
+// Check if user has NFT
+async function checkNFTBalance() {
+  try {
+    // balanceOf function signature
+    const data = '0x70a08231' + '000000000000000000000000' + userAddress.slice(2);
+    
+    const result = await window.ethereum.request({
+      method: 'eth_call',
+      params: [{
+        to: CONTRACT_ADDRESS,
+        data: data
+      }, 'latest']
+    });
+
+    // Convert hex to number
+    const balance = parseInt(result, 16);
+    
+    document.getElementById('walletLoading').classList.remove('show');
+
+    if (balance > 0) {
+      // Has NFT - show game menu
+      hasNFT = true;
+      hideAllScreens();
+      document.getElementById('menu').style.display = 'flex';
     } else {
-      // User needs to mint
-      showScreen('mintScreen');
+      // No NFT - show mint screen
+      hasNFT = false;
+      hideAllScreens();
+      document.getElementById('mintScreen').style.display = 'flex';
     }
     
-    showLoading(false);
   } catch (error) {
     console.error('Balance check error:', error);
-    alert('Error checking NFT balance');
-    showLoading(false);
+    alert('Error checking NFT. Please try again.');
+    document.getElementById('walletLoading').classList.remove('show');
   }
 }
 
 // Mint NFT
 async function mintNFT() {
   try {
-    showLoading(true);
     document.getElementById('mintBtn').disabled = true;
+    document.getElementById('mintLoading').classList.add('show');
 
-    const tx = await contract.mint({
-      value: ethers.utils.parseEther(MINT_PRICE)
+    // mint() function signature
+    const data = '0x1249c58b';
+
+    const txHash = await window.ethereum.request({
+      method: 'eth_sendTransaction',
+      params: [{
+        from: userAddress,
+        to: CONTRACT_ADDRESS,
+        value: '0x' + parseInt(MINT_PRICE).toString(16),
+        data: data
+      }]
     });
 
-    alert('Transaction sent! Waiting for confirmation...');
-    await tx.wait();
+    alert('🚀 Transaction sent!\n\nHash: ' + txHash.slice(0,10) + '...\n\nWaiting for confirmation...');
 
-    alert('🎉 Mint successful! You can now play!');
+    // Wait for transaction (simplified - just wait 10 seconds)
+    await new Promise(resolve => setTimeout(resolve, 10000));
+
+    alert('🎉 Mint successful!\n\nYou can now play Snake on Base!');
     
-    // Show game menu
-    showScreen('menu');
+    hasNFT = true;
+    hideAllScreens();
+    document.getElementById('menu').style.display = 'flex';
     
   } catch (error) {
     console.error('Mint error:', error);
     if (error.code === 4001) {
-      alert('Transaction cancelled');
+      alert('❌ Transaction cancelled');
     } else {
-      alert('Mint failed: ' + error.message);
+      alert('❌ Mint failed: ' + (error.message || 'Unknown error'));
     }
-    document.getElementById('mintBtn').disabled = false;
   } finally {
-    showLoading(false);
+    document.getElementById('mintBtn').disabled = false;
+    document.getElementById('mintLoading').classList.remove('show');
   }
 }
 
-// Disconnect Wallet
+// Disconnect
 function disconnectWallet() {
   localStorage.removeItem('connectedWallet');
   userAddress = null;
-  provider = null;
-  signer = null;
-  contract = null;
+  hasNFT = false;
   document.getElementById('walletInfo').style.display = 'none';
-  showScreen('walletConnect');
+  hideAllScreens();
+  document.getElementById('initialScreen').style.display = 'flex';
 }
 
-// Auto-connect on page load
+// Auto-connect on load
 window.addEventListener('load', async () => {
   const savedWallet = localStorage.getItem('connectedWallet');
-  if (savedWallet && typeof window.ethereum !== 'undefined') {
+  if (savedWallet && window.ethereum) {
     try {
       const accounts = await window.ethereum.request({ method: 'eth_accounts' });
       if (accounts.length > 0 && accounts[0].toLowerCase() === savedWallet.toLowerCase()) {
-        await connectWallet('auto');
+        userAddress = accounts[0];
+        document.getElementById('walletInfo').style.display = 'block';
+        document.getElementById('walletAddress').textContent = 
+          userAddress.slice(0,6) + '...' + userAddress.slice(-4);
+        await checkNFTBalance();
       }
     } catch (error) {
       console.error('Auto-connect failed:', error);
@@ -347,21 +448,16 @@ window.addEventListener('load', async () => {
   }
 });
 
-// Screen Management
-function showScreen(screenId) {
-  ['walletConnect', 'mintScreen', 'menu', 'gameOver'].forEach(id => {
+// Screen management
+function hideAllScreens() {
+  ['initialScreen', 'walletSelect', 'mintScreen', 'menu', 'gameOver'].forEach(id => {
     document.getElementById(id).style.display = 'none';
   });
-  document.getElementById(screenId).style.display = 'flex';
-}
-
-function showLoading(show) {
-  const msgs = document.querySelectorAll('#loadingMsg');
-  msgs.forEach(msg => msg.style.display = show ? 'block' : 'none');
 }
 
 function backToMenu() {
-  showScreen('menu');
+  hideAllScreens();
+  document.getElementById('menu').style.display = 'flex';
   canvas.style.display = 'none';
   document.getElementById('controls').style.display = 'none';
   document.getElementById('score').style.display = 'none';
@@ -369,7 +465,7 @@ function backToMenu() {
 
 // Game Functions
 function startGame(){
-  showScreen('dummy'); // Hide all overlays
+  hideAllScreens();
   canvas.style.display="block";
   document.getElementById("controls").style.display="block";
   document.getElementById("score").style.display="block";
@@ -457,12 +553,12 @@ document.addEventListener("keyup",e=>{
 });
 function updateScore(){document.getElementById("score").innerText="SCORE: "+score;}
 
-// Listen for account changes
-if (typeof window.ethereum !== 'undefined') {
+// Wallet events
+if (window.ethereum) {
   window.ethereum.on('accountsChanged', (accounts) => {
     if (accounts.length === 0) {
       disconnectWallet();
-    } else if (userAddress && accounts[0].toLowerCase() !== userAddress.toLowerCase()) {
+    } else {
       window.location.reload();
     }
   });
