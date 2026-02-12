@@ -1,1 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Snake on Base</title>
+<style>
+body{
+  margin:0;
+  background:#0b0b0b;
+  color:#fff;
+  font-family:Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+#container{width:360px;position:relative;text-align:center;}
+canvas{display:none;background:#111;}
+#score{
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:14px;
+  display:none;
+}
+.overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+}
+button{
+  padding:12px 24px;
+  border:none;border-radius:8px;
+  font-size:16px;cursor:pointer;
+}
+#controls{display:none;margin-top:10px;}
+.pad{
+  display:grid;
+  grid-template-columns:60px 60px 60px;
+  grid-template-rows:60px 60px 60px;
+  gap:6px;
+  justify-content:center;
+}
+.ctrl{background:#1a1a1a;color:#fff;font-size:22px;border-radius:10px;}
+.boost{background:#333;font-size:14px;}
+</style>
+</head>
+<body>
+<div id="container">
+<h2>🐍 Snake on Base</h2>
 
+<div id="score">SCORE: 0</div>
+<canvas id="game" width="360" height="360"></canvas>
+
+<!-- MENU -->
+<div id="menu" class="overlay">
+  <button onclick="startGame()">PLAY</button>
+</div>
+
+<!-- GAME OVER -->
+<div id="gameOver" class="overlay" style="display:none;">
+  <h2>GAME OVER</h2>
+  <button onclick="startGame()">PLAY AGAIN</button>
+</div>
+
+<!-- CONTROLS -->
+<div id="controls">
+  <div class="pad">
+    <div></div><button class="ctrl" onclick="setDir(0,-1)">⬆️</button><div></div>
+    <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
+    <button class="ctrl boost" onmousedown="boostOn()" onmouseup="boostOff()">BOOST</button>
+    <button class="ctrl" onclick="setDir(1,0)">➡️</button>
+    <div></div><button class="ctrl" onclick="setDir(0,1)">⬇️</button><div></div>
+  </div>
+</div>
+
+<script>
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const grid=18;
+const size=canvas.width/grid;
+
+let snake, food, dx, dy, loopId;
+let speed=300;
+let score=0;
+
+function startGame(){
+  document.getElementById("menu").style.display="none";
+  document.getElementById("gameOver").style.display="none";
+  canvas.style.display="block";
+  document.getElementById("controls").style.display="block";
+  document.getElementById("score").style.display="block";
+
+  snake=[{x:9,y:9}];
+  dx=1; dy=0;
+  score=0;
+  updateScore();
+  food=spawnFood();
+
+  clearInterval(loopId);
+  loopId=setInterval(loop,speed);
+}
+
+function loop(){
+  const head={x:snake[0].x+dx, y:snake[0].y+dy};
+
+  if(head.x<0||head.y<0||head.x>=grid||head.y>=grid||
+     snake.some(s=>s.x===head.x&&s.y===head.y)){
+    clearInterval(loopId);
+    document.getElementById("gameOver").style.display="flex";
+    return;
+  }
+
+  snake.unshift(head);
+
+  if(head.x===food.x&&head.y===food.y){
+    score++;
+    updateScore();
+    food=spawnFood();
+  } else snake.pop();
+
+  draw();
+}
+
+function draw(){
+  ctx.fillStyle="#111";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  ctx.strokeStyle="#1a1a1a";
+  for(let i=0;i<grid;i++){
+    ctx.beginPath();
+    ctx.moveTo(i*size,0);
+    ctx.lineTo(i*size,canvas.height);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(0,i*size);
+    ctx.lineTo(canvas.width,i*size);
+    ctx.stroke();
+  }
+
+  ctx.fillStyle="#fff";
+  snake.forEach(s=>ctx.fillRect(s.x*size,s.y*size,size-1,size-1));
+  ctx.fillRect(food.x*size,food.y*size,size-1,size-1);
+}
+
+function spawnFood(){
+  return {x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};
+}
+
+function setDir(x,y){if(x!==-dx||y!==-dy){dx=x;dy=y;}}
+function boostOn(){clearInterval(loopId); loopId=setInterval(loop,120);}
+function boostOff(){clearInterval(loopId); loopId=setInterval(loop,speed);}
+
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowUp") setDir(0,-1);
+  if(e.key==="ArrowDown") setDir(0,1);
+  if(e.key==="ArrowLeft") setDir(-1,0);
+  if(e.key==="ArrowRight") setDir(1,0);
+});
+function updateScore(){document.getElementById("score").innerText="SCORE: "+score;}
+</script>
+</body>
+</html>
