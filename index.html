@@ -158,6 +158,10 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowDown") setDir(0,1);
   if(e.key==="ArrowLeft") setDir(-1,0);
   if(e.key==="ArrowRight") setDir(1,0);
+  if(e.key===" ") boostOn();
+});
+document.addEventListener("keyup",e=>{
+  if(e.key===" ") boostOff();
 });
 function updateScore(){document.getElementById("score").innerText="SCORE: "+score;}
 </script>
