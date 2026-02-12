@@ -532,10 +532,22 @@ function boostOn(){clearInterval(loopId); loopId=setInterval(loop,120);}
 function boostOff(){clearInterval(loopId); loopId=setInterval(loop,speed);}
 
 document.addEventListener("keydown",e=>{
-  if(e.key==="ArrowUp") setDir(0,-1);
-  if(e.key==="ArrowDown") setDir(0,1);
-  if(e.key==="ArrowLeft") setDir(-1,0);
-  if(e.key==="ArrowRight") setDir(1,0);
+  if(e.key==="ArrowUp"){
+    e.preventDefault();
+    setDir(0,-1);
+  }
+  if(e.key==="ArrowDown"){
+    e.preventDefault();
+    setDir(0,1);
+  }
+  if(e.key==="ArrowLeft"){
+    e.preventDefault();
+    setDir(-1,0);
+  }
+  if(e.key==="ArrowRight"){
+    e.preventDefault();
+    setDir(1,0);
+  }
   if(e.key===" "){
     e.preventDefault();
     if(!spacePressed){
