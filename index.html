@@ -85,6 +85,7 @@ const size=canvas.width/grid;
 let snake, food, dx, dy, loopId;
 let speed=300;
 let score=0;
+let spacePressed=false;
 
 function startGame(){
   document.getElementById("menu").style.display="none";
@@ -158,10 +159,20 @@ document.addEventListener("keydown",e=>{
   if(e.key==="ArrowDown") setDir(0,1);
   if(e.key==="ArrowLeft") setDir(-1,0);
   if(e.key==="ArrowRight") setDir(1,0);
-  if(e.key===" ") boostOn();
+  if(e.key===" "){
+    e.preventDefault();
+    if(!spacePressed){
+      spacePressed=true;
+      boostOn();
+    }
+  }
 });
 document.addEventListener("keyup",e=>{
-  if(e.key===" ") boostOff();
+  if(e.key===" "){
+    e.preventDefault();
+    spacePressed=false;
+    boostOff();
+  }
 });
 function updateScore(){document.getElementById("score").innerText="SCORE: "+score;}
 </script>
