@@ -229,7 +229,7 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
   <div class="pad">
     <div></div><button class="ctrl" onclick="setDir(0,-1)">⬆️</button><div></div>
     <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
-    <button class="ctrl boost"></button>
+    <button class="ctrl boost" ontouchstart="boostOn()" ontouchend="boostOff()"></button>
     <button class="ctrl" onclick="setDir(1,0)">➡️</button>
     <div></div><button class="ctrl" onclick="setDir(0,1)">⬇️</button><div></div>
   </div>
