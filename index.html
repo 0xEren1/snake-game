@@ -4,29 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Snake on Base</title>
-<link rel="icon" type="image/png" href="/public/icon.png">
-
-<!-- Base Mini App Meta Tags -->
-<meta name="fc:miniapp" content='{
-  "version":"next",
-  "imageUrl":"https://YOUR-DOMAIN.vercel.app/public/og-image.png",
-  "button":{
-    "title":"Play Snake 🐍",
-    "action":{
-      "type":"launch_miniapp",
-      "name":"Snake on Base",
-      "url":"https://YOUR-DOMAIN.vercel.app"
-    }
-  }
-}' />
-
-<!-- Open Graph -->
-<meta property="og:title" content="Snake on Base" />
-<meta property="og:description" content="Play classic snake game on Base blockchain. Mint once, play forever!" />
-<meta property="og:image" content="https://YOUR-DOMAIN.vercel.app/public/og-image.png" />
-<meta property="og:url" content="https://YOUR-DOMAIN.vercel.app" />
-<meta name="twitter:card" content="summary_large_image" />
-
+<link rel="icon" type="image/png" href="favicon.png">
 <style>
 body{
   margin:0;
@@ -170,31 +148,9 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
   font-size:14px;
   margin-top:10px;
 }
-
-/* Loading Splash (for Base Mini App) */
-#splash{
-  position:fixed;
-  inset:0;
-  background:#0b0b0b;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:9999;
-  transition:opacity 0.3s;
-}
-#splash.hidden{
-  opacity:0;
-  pointer-events:none;
-}
 </style>
 </head>
 <body>
-
-<!-- Loading Splash -->
-<div id="splash">
-  <h1 style="font-size:64px;margin:0;">🐍</h1>
-</div>
-
 <div id="container">
 <h2>🐍 Snake on Base</h2>
 
@@ -279,19 +235,6 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
   </div>
 </div>
 
-<!-- Base MiniApp SDK -->
-<script type="module">
-  import { sdk } from 'https://esm.sh/@farcaster/miniapp-sdk@0.1.0';
-  
-  window.addEventListener('load', async () => {
-    // Hide splash screen once app is ready
-    setTimeout(async () => {
-      document.getElementById('splash').classList.add('hidden');
-      await sdk.actions.ready();
-    }, 500);
-  });
-</script>
-
 <script>
 // Contract Details
 const CONTRACT_ADDRESS = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
@@ -327,12 +270,14 @@ async function connectWallet(walletType) {
   try {
     document.getElementById('walletLoading').classList.add('show');
     
+    // Check if wallet exists
     if (!window.ethereum) {
       alert('❌ No Web3 wallet detected!\n\nPlease install:\n• MetaMask\n• OKX Wallet\n• Coinbase Wallet\n• Rabby Wallet');
       document.getElementById('walletLoading').classList.remove('show');
       return;
     }
 
+    // Request accounts
     const accounts = await window.ethereum.request({ 
       method: 'eth_requestAccounts' 
     });
@@ -343,15 +288,18 @@ async function connectWallet(walletType) {
 
     userAddress = accounts[0];
 
+    // Check network
     const chainId = await window.ethereum.request({ method: 'eth_chainId' });
     
     if (chainId !== BASE_CHAIN_ID) {
+      // Try to switch to Base
       try {
         await window.ethereum.request({
           method: 'wallet_switchEthereumChain',
           params: [{ chainId: BASE_CHAIN_ID }],
         });
       } catch (switchError) {
+        // Network not added, add it
         if (switchError.code === 4902) {
           await window.ethereum.request({
             method: 'wallet_addEthereumChain',
@@ -373,12 +321,15 @@ async function connectWallet(walletType) {
       }
     }
 
+    // Save wallet
     localStorage.setItem('connectedWallet', userAddress);
     
+    // Show wallet info
     document.getElementById('walletInfo').style.display = 'block';
     document.getElementById('walletAddress').textContent = 
       userAddress.slice(0,6) + '...' + userAddress.slice(-4);
 
+    // Check NFT balance
     await checkNFTBalance();
     
   } catch (error) {
@@ -391,6 +342,7 @@ async function connectWallet(walletType) {
 // Check if user has NFT
 async function checkNFTBalance() {
   try {
+    // balanceOf function signature
     const data = '0x70a08231' + '000000000000000000000000' + userAddress.slice(2);
     
     const result = await window.ethereum.request({
@@ -401,15 +353,18 @@ async function checkNFTBalance() {
       }, 'latest']
     });
 
+    // Convert hex to number
     const balance = parseInt(result, 16);
     
     document.getElementById('walletLoading').classList.remove('show');
 
     if (balance > 0) {
+      // Has NFT - show game menu
       hasNFT = true;
       hideAllScreens();
       document.getElementById('menu').style.display = 'flex';
     } else {
+      // No NFT - show mint screen
       hasNFT = false;
       hideAllScreens();
       document.getElementById('mintScreen').style.display = 'flex';
@@ -428,6 +383,7 @@ async function mintNFT() {
     document.getElementById('mintBtn').disabled = true;
     document.getElementById('mintLoading').classList.add('show');
 
+    // mint() function signature
     const data = '0x1249c58b';
 
     const txHash = await window.ethereum.request({
@@ -442,6 +398,7 @@ async function mintNFT() {
 
     alert('🚀 Transaction sent!\n\nHash: ' + txHash.slice(0,10) + '...\n\nWaiting for confirmation...');
 
+    // Wait for transaction (simplified - just wait 10 seconds)
     await new Promise(resolve => setTimeout(resolve, 10000));
 
     alert('🎉 Mint successful!\n\nYou can now play Snake on Base!');
