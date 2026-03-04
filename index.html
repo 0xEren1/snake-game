@@ -22,12 +22,14 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+  height:100%;
+  overflow:hidden;
+}
 body{
   font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   background:linear-gradient(135deg,#0f0c29,#302b63,#24243e);
   color:#fff;
-  overflow:hidden;
-  height:100vh;
 }
 
 /* App Container */
@@ -35,10 +37,12 @@ body{
   max-width:428px;
   margin:0 auto;
   height:100vh;
+  height:100dvh;
   display:flex;
   flex-direction:column;
   background:#0b0b0b;
   position:relative;
+  overflow:hidden;
 }
 
 /* Header */
@@ -50,6 +54,7 @@ body{
   align-items:center;
   box-shadow:0 2px 10px rgba(0,0,0,0.3);
   z-index:100;
+  flex-shrink:0;
 }
 #header h1{
   font-size:20px;
@@ -84,18 +89,23 @@ body{
 /* Main Content */
 #content{
   flex:1;
-  overflow-y:auto;
-  overflow-x:hidden;
-  padding-bottom:70px;
+  position:relative;
+  overflow:hidden;
 }
 
 /* Pages */
 .page{
+  position:absolute;
+  inset:0;
   display:none;
-  padding:20px;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding-bottom:70px;
+}
+.page.active{
+  display:block;
   animation:fadeIn 0.3s;
 }
-.page.active{display:block;}
 
 @keyframes fadeIn{
   from{opacity:0;transform:translateY(10px);}
@@ -103,6 +113,9 @@ body{
 }
 
 /* Home Page */
+#homePage{
+  padding:20px;
+}
 .hero{
   text-align:center;
   padding:40px 20px;
@@ -137,10 +150,6 @@ body{
 .play-btn:hover{
   transform:translateY(-2px);
   box-shadow:0 12px 24px rgba(102,126,234,0.5);
-}
-.play-btn:disabled{
-  opacity:0.5;
-  cursor:not-allowed;
 }
 
 .stats-grid{
@@ -204,12 +213,37 @@ body{
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  min-height:calc(100vh - 140px);
+  background:#0b0b0b;
 }
 .game-wrapper{
   width:100%;
   max-width:360px;
   padding:20px;
+}
+.start-screen{
+  text-align:center;
+  padding:60px 20px;
+}
+.start-screen h2{
+  font-size:28px;
+  margin-bottom:20px;
+  color:#667eea;
+}
+.start-btn{
+  background:linear-gradient(135deg,#4CAF50,#45a049);
+  color:#fff;
+  border:none;
+  padding:20px 60px;
+  border-radius:30px;
+  font-size:20px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 8px 20px rgba(76,175,80,0.4);
+  transition:all 0.3s;
+}
+.start-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 24px rgba(76,175,80,0.5);
 }
 #score{
   text-align:center;
@@ -218,6 +252,7 @@ body{
   margin-bottom:20px;
   color:#4CAF50;
   text-shadow:0 0 10px rgba(76,175,80,0.5);
+  display:none;
 }
 canvas{
   width:100%;
@@ -225,10 +260,12 @@ canvas{
   border-radius:16px;
   box-shadow:0 8px 24px rgba(0,0,0,0.3);
   background:linear-gradient(135deg,#1a1a2e,#16213e);
+  display:none;
 }
 
 #controls{
   margin-top:20px;
+  display:none;
 }
 .pad{
   display:grid;
@@ -257,6 +294,9 @@ canvas{
 }
 
 /* Leaderboard */
+#leaderboardPage{
+  padding:20px;
+}
 .leaderboard-header{
   text-align:center;
   margin-bottom:24px;
@@ -316,19 +356,18 @@ canvas{
 
 /* Bottom Navigation */
 #bottomNav{
-  position:fixed;
+  position:absolute;
   bottom:0;
-  left:50%;
-  transform:translateX(-50%);
-  width:100%;
-  max-width:428px;
-  background:rgba(11,11,11,0.95);
+  left:0;
+  right:0;
+  background:rgba(11,11,11,0.98);
   backdrop-filter:blur(10px);
   border-top:1px solid rgba(255,255,255,0.1);
   display:flex;
   justify-content:space-around;
   padding:12px 0;
   z-index:100;
+  flex-shrink:0;
 }
 .nav-btn{
   flex:1;
@@ -372,6 +411,8 @@ canvas{
   width:100%;
   border:1px solid rgba(255,255,255,0.1);
   animation:modalSlide 0.3s;
+  max-height:90vh;
+  overflow-y:auto;
 }
 @keyframes modalSlide{
   from{opacity:0;transform:translateY(20px);}
@@ -538,9 +579,7 @@ canvas{
       <div class="hero">
         <h2>Snake on Base</h2>
         <p>Classic arcade game on blockchain</p>
-        <button class="play-btn" id="playBtn" onclick="goToGame()" disabled>
-          Connect Wallet to Play
-        </button>
+        <button class="play-btn" onclick="handlePlayClick()">PLAY NOW</button>
       </div>
 
       <div class="stats-grid">
@@ -577,6 +616,13 @@ canvas{
     <!-- GAME PAGE -->
     <div id="gamePage" class="page">
       <div class="game-wrapper">
+        <!-- Start Screen -->
+        <div id="startScreen" class="start-screen">
+          <h2>Ready to Play?</h2>
+          <button class="start-btn" onclick="startGame()">START</button>
+        </div>
+        
+        <!-- Game -->
         <div id="score">SCORE: 0</div>
         <canvas id="game" width="360" height="360"></canvas>
         <div id="controls">
@@ -734,6 +780,20 @@ function switchPage(page) {
   }
 }
 
+// Handle Play Button Click from Home
+function handlePlayClick() {
+  if (!userAddress) {
+    // No wallet connected
+    openWalletModal();
+  } else if (!hasNFT) {
+    // Wallet connected but no NFT
+    document.getElementById('mintModal').classList.add('active');
+  } else {
+    // Has NFT - go to game page
+    switchPage('game');
+  }
+}
+
 // Wallet Modals
 function openWalletModal() {
   document.getElementById('walletModal').classList.add('active');
@@ -824,10 +884,9 @@ async function checkNFTBalance() {
 
     if (balance > 0) {
       hasNFT = true;
-      document.getElementById('playBtn').disabled = false;
-      document.getElementById('playBtn').textContent = 'PLAY NOW';
     } else {
       hasNFT = false;
+      // Show mint modal automatically after wallet connect
       document.getElementById('mintModal').classList.add('active');
     }
     
@@ -858,12 +917,13 @@ async function mintNFT() {
 
     alert('🚀 Transaction sent! Waiting...');
     await new Promise(resolve => setTimeout(resolve, 10000));
-    alert('🎉 Mint successful! You can now play!');
+    alert('🎉 Mint successful!');
     
     hasNFT = true;
-    document.getElementById('playBtn').disabled = false;
-    document.getElementById('playBtn').textContent = 'PLAY NOW';
     closeMintModal();
+    
+    // Go to Play page
+    switchPage('game');
     
   } catch (error) {
     console.error('Mint error:', error);
@@ -878,18 +938,14 @@ async function mintNFT() {
   }
 }
 
-// Go to game
-function goToGame() {
-  if (!hasNFT) {
-    alert('Please mint Snake Access Pass first');
-    return;
-  }
-  switchPage('game');
-  setTimeout(() => startGame(), 300);
-}
-
 // Game Functions
 function startGame() {
+  // Hide start screen, show game
+  document.getElementById('startScreen').style.display = 'none';
+  document.getElementById('score').style.display = 'block';
+  canvas.style.display = 'block';
+  document.getElementById('controls').style.display = 'block';
+  
   snake = [{x:9, y:9}];
   dx = 1;
   dy = 0;
@@ -1028,6 +1084,13 @@ function restartGame() {
 
 function closeGameOver() {
   document.getElementById('gameOverModal').classList.remove('active');
+  
+  // Reset game page to start screen
+  document.getElementById('startScreen').style.display = 'block';
+  document.getElementById('score').style.display = 'none';
+  canvas.style.display = 'none';
+  document.getElementById('controls').style.display = 'none';
+  
   switchPage('home');
 }
 
@@ -1086,7 +1149,7 @@ document.addEventListener("keydown", e => {
   }
   if (e.key === "ArrowLeft") {
     e.preventDefault();
-    setDir(-1, 0);
+    setDir(-1,0);
   }
   if (e.key === "ArrowRight") {
     e.preventDefault();
