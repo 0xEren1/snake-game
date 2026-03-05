@@ -2,648 +2,431 @@
 <html lang="en">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<!-- Base Mini App Meta -->
 <meta property="og:title" content="Snake on Base" />
 <meta property="og:description" content="Mint your access pass and play Snake on Base." />
 <meta property="og:image" content="https://snake-game-nine-alpha-54.vercel.app/favicon.png" />
 <meta name="fc:miniapp" content="true" />
-
-<!-- Mini App SDK -->
 <script src="https://unpkg.com/@farcaster/miniapp-sdk/dist/index.umd.js"></script>
-
 <meta charset="UTF-8">
 <title>Snake on Base</title>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="manifest" href="/manifest.json">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;overflow:hidden;}
-
+*{box-sizing:border-box;}
 body{
+  margin:0;
   background:#0b0b0b;
   color:#fff;
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  font-family:Arial,sans-serif;
+  display:flex;
+  justify-content:center;
+  align-items:flex-start;
+  min-height:100vh;
+  padding:0;
 }
 
-/* Container */
-#container{
-  max-width:428px;
-  margin:0 auto;
-  height:100vh;
-  height:100dvh;
+/* APP WRAPPER */
+#app{
+  width:360px;
+  min-height:100vh;
   display:flex;
   flex-direction:column;
   position:relative;
   background:#0b0b0b;
 }
 
-/* Header */
-#header{
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  padding:16px 20px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  box-shadow:0 2px 10px rgba(0,0,0,0.3);
-  z-index:100;
-}
-#header h1{
-  font-size:20px;
-  font-weight:700;
-}
-
-/* Wallet Button */
-#walletBtn{
-  background:rgba(255,255,255,0.2);
-  border:none;
-  padding:8px 16px;
-  border-radius:20px;
-  color:#fff;
-  font-size:13px;
-  font-weight:600;
-  cursor:pointer;
-  transition:all 0.3s;
-}
-#walletBtn:hover{
-  background:rgba(255,255,255,0.3);
-}
-#walletInfo{
-  display:none;
-  background:rgba(255,255,255,0.15);
-  padding:6px 12px;
-  border-radius:20px;
-  font-size:12px;
-}
-
-/* Main Content Area */
-#content{
+/* TAB PAGES */
+.tab-page{
   flex:1;
-  position:relative;
-  overflow:hidden;
-}
-
-/* Pages */
-.page{
-  position:absolute;
-  inset:0;
   display:none;
-  overflow-y:auto;
-  padding-bottom:70px;
-}
-.page.active{
-  display:block;
-  animation:fadeIn 0.3s;
-}
-@keyframes fadeIn{
-  from{opacity:0;transform:translateY(10px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
-/* Home Page */
-#homePage{padding:20px;}
-.hero{
-  text-align:center;
-  padding:40px 20px;
-  background:linear-gradient(135deg,rgba(102,126,234,0.1),rgba(118,75,162,0.1));
-  border-radius:20px;
-  margin-bottom:20px;
-}
-.hero h2{
-  font-size:32px;
-  margin-bottom:10px;
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  -webkit-background-clip:text;
-  -webkit-text-fill-color:transparent;
-}
-.hero p{opacity:0.8;font-size:14px;margin-bottom:20px;}
-
-.play-btn{
-  background:linear-gradient(135deg,#667eea,#764ba2);
-  color:#fff;
-  border:none;
-  padding:16px 48px;
-  border-radius:30px;
-  font-size:18px;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:0 8px 20px rgba(102,126,234,0.4);
-  transition:all 0.3s;
-}
-.play-btn:hover{
-  transform:translateY(-2px);
-  box-shadow:0 12px 24px rgba(102,126,234,0.5);
-}
-
-.stats-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:12px;
-  margin-bottom:20px;
-}
-.stat-card{
-  background:rgba(255,255,255,0.05);
-  padding:20px;
-  border-radius:16px;
-  text-align:center;
-  border:1px solid rgba(255,255,255,0.1);
-}
-.stat-value{
-  font-size:28px;
-  font-weight:700;
-  color:#4CAF50;
-  margin-bottom:5px;
-}
-.stat-label{
-  font-size:13px;
-  opacity:0.7;
-}
-
-.info-card{
-  background:rgba(255,255,255,0.05);
-  padding:20px;
-  border-radius:16px;
-  margin-bottom:20px;
-  border:1px solid rgba(255,255,255,0.1);
-}
-.info-card h3{
-  font-size:16px;
-  margin-bottom:12px;
-  color:#667eea;
-}
-.info-card ul{
-  list-style:none;
-  padding:0;
-}
-.info-card li{
-  padding:8px 0;
-  font-size:14px;
-  opacity:0.8;
-  padding-left:20px;
-  position:relative;
-}
-.info-card li:before{
-  content:'•';
-  position:absolute;
-  left:0;
-  color:#4CAF50;
-}
-
-/* Game Page */
-#gamePage{
-  padding:0;
-  display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:center;
+  padding:20px 20px 80px 20px;
+  position:relative;
 }
-.game-wrapper{
-  width:100%;
-  max-width:360px;
-  padding:20px;
-}
-.start-screen{
-  text-align:center;
-  padding:60px 20px;
-}
-.start-screen h2{
-  font-size:28px;
-  margin-bottom:20px;
-  color:#667eea;
-}
-.start-btn{
-  background:linear-gradient(135deg,#4CAF50,#45a049);
-  color:#fff;
-  border:none;
-  padding:20px 60px;
-  border-radius:30px;
-  font-size:20px;
-  font-weight:700;
-  cursor:pointer;
-  box-shadow:0 8px 20px rgba(76,175,80,0.4);
-  transition:all 0.3s;
-}
-.start-btn:hover{
-  transform:translateY(-2px);
-}
+.tab-page.active{display:flex;}
 
-#score{
-  text-align:center;
-  font-size:24px;
-  font-weight:700;
-  margin-bottom:20px;
-  color:#4CAF50;
-  text-shadow:0 0 10px rgba(76,175,80,0.5);
-  display:none;
-}
-canvas{
-  width:100%;
-  border-radius:16px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.3);
-  background:linear-gradient(135deg,#1a1a2e,#16213e);
-  display:none;
-}
-#controls{
-  margin-top:20px;
-  display:none;
-}
-.pad{
-  display:grid;
-  grid-template-columns:70px 70px 70px;
-  grid-template-rows:70px 70px 70px;
-  gap:8px;
-  justify-content:center;
-}
-.ctrl{
-  background:rgba(255,255,255,0.1);
-  border:2px solid rgba(255,255,255,0.2);
-  color:#fff;
-  font-size:28px;
-  border-radius:16px;
-  cursor:pointer;
-  transition:all 0.2s;
-}
-.ctrl:active{
-  background:rgba(102,126,234,0.3);
-  transform:scale(0.95);
-}
-.boost{
-  background:rgba(76,175,80,0.2);
-  border-color:rgba(76,175,80,0.3);
-}
-
-/* Leaderboard */
-#leaderboardPage{padding:20px;}
-.leaderboard-header{
-  text-align:center;
-  margin-bottom:24px;
-}
-.leaderboard-header h2{
-  font-size:28px;
-  margin-bottom:8px;
-}
-.leaderboard-header p{
-  opacity:0.7;
-  font-size:14px;
-}
-.leaderboard-list{
-  background:rgba(255,255,255,0.05);
-  border-radius:16px;
-  overflow:hidden;
-  border:1px solid rgba(255,255,255,0.1);
-}
-.leaderboard-item{
-  display:flex;
-  align-items:center;
-  padding:16px 20px;
-  border-bottom:1px solid rgba(255,255,255,0.05);
-}
-.leaderboard-item:last-child{border-bottom:none;}
-.rank{
-  font-size:20px;
-  font-weight:700;
-  width:50px;
-}
-.rank.gold{color:#FFD700;}
-.rank.silver{color:#C0C0C0;}
-.rank.bronze{color:#CD7F32;}
-.player-info{flex:1;margin:0 15px;}
-.player-address{font-size:14px;opacity:0.8;}
-.player-score{
-  font-size:20px;
-  font-weight:700;
-  color:#4CAF50;
-}
-.empty-state{
-  text-align:center;
-  padding:60px 20px;
-  opacity:0.5;
-}
-
-/* Bottom Tabs */
+/* BOTTOM NAV */
 #bottomNav{
-  position:absolute;
+  position:fixed;
   bottom:0;
-  left:0;
-  right:0;
-  background:rgba(11,11,11,0.98);
-  backdrop-filter:blur(10px);
-  border-top:1px solid rgba(255,255,255,0.1);
+  width:360px;
+  height:64px;
+  background:#111;
+  border-top:1px solid #222;
   display:flex;
-  justify-content:space-around;
-  padding:12px 0;
-  z-index:100;
+  z-index:1000;
 }
 .nav-btn{
   flex:1;
-  background:none;
-  border:none;
-  color:rgba(255,255,255,0.5);
-  font-size:12px;
   display:flex;
   flex-direction:column;
   align-items:center;
+  justify-content:center;
   gap:4px;
+  background:none;
+  border:none;
+  color:#555;
+  font-size:11px;
   cursor:pointer;
-  padding:8px;
+  transition:color 0.2s;
+  padding:8px 0;
 }
 .nav-btn.active{color:#667eea;}
-.nav-icon{font-size:24px;}
+.nav-btn .nav-icon{font-size:22px;line-height:1;}
+.nav-btn .nav-label{font-size:11px;font-weight:600;letter-spacing:0.5px;}
 
-/* Modals */
-.modal{
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,0.85);
-  backdrop-filter:blur(10px);
-  z-index:1000;
+/* GAME PAGE LAYOUT */
+#gamePage{
+  padding:0 0 80px 0;
+}
+#gameHeader{
+  width:360px;
+  padding:12px 20px;
+  display:flex;
   align-items:center;
-  justify-content:center;
-  padding:20px;
+  justify-content:space-between;
 }
-.modal.active{display:flex;}
-.modal-content{
-  background:linear-gradient(135deg,#1a1a2e,#16213e);
-  padding:30px;
-  border-radius:24px;
-  max-width:360px;
-  width:100%;
-  border:1px solid rgba(255,255,255,0.1);
-  animation:modalSlide 0.3s;
-}
-@keyframes modalSlide{
-  from{opacity:0;transform:translateY(20px);}
-  to{opacity:1;transform:translateY(0);}
-}
-.modal-content h3{
+#gameHeader h2{margin:0;font-size:18px;}
+
+#container{
+  width:360px;
+  position:relative;
   text-align:center;
-  margin-bottom:24px;
-  font-size:22px;
+  flex-shrink:0;
 }
 
+canvas{display:none;background:#111;}
+#score{
+  position:absolute;
+  top:10px;
+  right:10px;
+  font-size:14px;
+  display:none;
+  z-index:10;
+}
+
+.overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  gap:15px;
+  padding:20px;
+  z-index:20;
+  min-height:360px;
+}
+button{
+  padding:12px 24px;
+  border:none;border-radius:8px;
+  font-size:16px;cursor:pointer;
+  transition:all 0.3s;
+}
+button:hover{transform:scale(1.05);}
+button:disabled{opacity:0.5;cursor:not-allowed;}
+#controls{display:none;margin-top:10px;padding:10px 0 0 0;}
+.pad{
+  display:grid;
+  grid-template-columns:60px 60px 60px;
+  grid-template-rows:60px 60px 60px;
+  gap:6px;
+  justify-content:center;
+}
+.ctrl{background:#1a1a1a;color:#fff;font-size:22px;border-radius:10px;}
+.boost{background:#333;font-size:14px;}
+
+/* Connect Button */
+#connectBtn{
+  background:linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color:#fff;
+  padding:16px 40px;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:12px;
+  cursor:pointer;
+  box-shadow:0 4px 15px rgba(102,126,234,0.4);
+}
+#connectBtn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 20px rgba(102,126,234,0.6);
+}
+
+/* Wallet Selection */
 .wallet-grid{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:12px;
-  margin-bottom:20px;
-}
-.wallet-option{
-  background:rgba(255,255,255,0.05);
-  padding:20px;
-  border-radius:16px;
-  border:2px solid transparent;
-  cursor:pointer;
-  text-align:center;
-  transition:all 0.3s;
-}
-.wallet-option:hover{
-  background:rgba(102,126,234,0.1);
-  border-color:#667eea;
-}
-.wallet-icon{font-size:36px;margin-bottom:8px;}
-.wallet-name{font-size:13px;}
-
-.mint-box{
-  background:rgba(255,255,255,0.05);
-  padding:24px;
-  border-radius:16px;
-  text-align:center;
-  margin:20px 0;
-  border:1px solid rgba(255,255,255,0.1);
-}
-.mint-box h3{
-  font-size:18px;
-  margin-bottom:12px;
-  color:#667eea;
-}
-.price{
-  font-size:32px;
-  font-weight:700;
-  color:#4CAF50;
-  margin:16px 0;
-  text-shadow:0 0 10px rgba(76,175,80,0.3);
-}
-.mint-detail{
-  font-size:13px;
-  opacity:0.7;
-  margin:8px 0;
-}
-
-.modal-btn{
+  margin-top:20px;
   width:100%;
-  background:linear-gradient(135deg,#667eea,#764ba2);
+  max-width:300px;
+}
+.wallet-btn{
+  background:#1a1a1a;
   color:#fff;
-  border:none;
-  padding:16px;
-  border-radius:16px;
-  font-size:16px;
-  font-weight:700;
-  cursor:pointer;
-  margin-bottom:12px;
+  padding:20px;
+  border-radius:12px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+  border:2px solid transparent;
   transition:all 0.3s;
 }
-.modal-btn:hover{
-  transform:translateY(-2px);
-}
-.modal-btn:disabled{
-  opacity:0.5;
-  cursor:not-allowed;
-}
-.modal-btn.secondary{
-  background:rgba(255,255,255,0.1);
-}
+.wallet-btn:hover{background:#252525;border-color:#667eea;}
+.wallet-icon{font-size:32px;}
 
-.loading{
-  text-align:center;
-  color:#667eea;
-  font-size:14px;
-  margin-top:12px;
+/* Mint Screen */
+.mint-box{
+  background:#1a1a1a;
+  padding:30px;
+  border-radius:12px;
+  margin:20px 0;
+  border:2px solid #333;
+}
+.mint-box h3{margin:0 0 15px 0;color:#667eea;}
+.price{font-size:28px;color:#4CAF50;font-weight:bold;margin:15px 0;}
+.mint-detail{font-size:13px;opacity:0.7;margin:8px 0;}
+#mintBtn{
+  background:#4CAF50;
+  color:#fff;
+  padding:15px 50px;
+  font-size:18px;
+  font-weight:bold;
+}
+#mintBtn:hover{background:#45a049;}
+
+/* Wallet Info */
+#walletInfo{
+  font-size:11px;
+  background:#1a1a1a;
+  padding:6px 10px;
+  border-radius:6px;
+  border:1px solid #333;
   display:none;
 }
-.loading.show{display:block;}
+.status{color:#4CAF50;font-weight:bold;}
+.address{opacity:0.6;}
 
-.gameover-content{text-align:center;}
-.gameover-content h2{
-  font-size:32px;
-  margin-bottom:16px;
-  color:#ff6b6b;
+.loading{display:none;margin-top:15px;color:#667eea;font-size:14px;}
+.loading.show{display:block;}
+.back-btn{background:#444;padding:8px 20px;font-size:14px;margin-top:10px;}
+
+/* ===== LEADERBOARD PAGE ===== */
+#leaderboardPage{
+  align-items:stretch;
 }
-.final-score{
-  font-size:48px;
-  font-weight:700;
-  color:#4CAF50;
-  margin:20px 0;
-  text-shadow:0 0 20px rgba(76,175,80,0.5);
+#lbHeader{
+  text-align:center;
+  padding:20px 0 10px;
 }
+#lbHeader h2{margin:0;font-size:22px;}
+#lbHeader p{margin:6px 0 0;font-size:13px;color:#555;}
+
+.lb-your-score{
+  background:#1a1a1a;
+  border:1px solid #333;
+  border-radius:10px;
+  padding:14px 18px;
+  margin:12px 0;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.lb-your-score .label{font-size:12px;color:#888;}
+.lb-your-score .val{font-size:22px;font-weight:bold;color:#4CAF50;}
+
+.lb-list{
+  background:#111;
+  border-radius:10px;
+  overflow:hidden;
+  border:1px solid #1e1e1e;
+}
+.lb-row{
+  display:flex;
+  align-items:center;
+  padding:12px 16px;
+  border-bottom:1px solid #1a1a1a;
+  gap:12px;
+  transition:background 0.15s;
+}
+.lb-row:last-child{border-bottom:none;}
+.lb-row.me{background:#16201a;}
+.lb-rank{
+  width:28px;
+  text-align:center;
+  font-size:14px;
+  font-weight:bold;
+  color:#555;
+  flex-shrink:0;
+}
+.lb-rank.top1{color:#FFD700;font-size:18px;}
+.lb-rank.top2{color:#C0C0C0;font-size:16px;}
+.lb-rank.top3{color:#CD7F32;font-size:16px;}
+.lb-name{
+  flex:1;
+  font-size:14px;
+  color:#ddd;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.lb-name .you-badge{
+  font-size:10px;
+  background:#4CAF50;
+  color:#000;
+  padding:2px 6px;
+  border-radius:4px;
+  margin-left:6px;
+  font-weight:bold;
+}
+.lb-score{
+  font-size:16px;
+  font-weight:bold;
+  color:#fff;
+  flex-shrink:0;
+}
+.lb-empty{
+  padding:40px 20px;
+  text-align:center;
+  color:#444;
+  font-size:14px;
+}
+
+/* Rank medal emojis */
+.medal-1::before{content:"🥇";}
+.medal-2::before{content:"🥈";}
+.medal-3::before{content:"🥉";}
 </style>
 </head>
 <body>
+<div id="app">
 
-<div id="container">
-  <!-- Header -->
-  <div id="header">
-    <h1>Snake on Base</h1>
-    <button id="walletBtn" onclick="openWalletModal()">Connect</button>
-    <div id="walletInfo">
-      <span id="walletAddress"></span>
+  <!-- ===== GAME TAB ===== -->
+  <div id="gamePage" class="tab-page active">
+    <div id="gameHeader">
+      <h2>🐍 Snake on Base</h2>
+      <div id="walletInfo">
+        <div class="status">✅ Connected</div>
+        <div class="address" id="walletAddress"></div>
+      </div>
+    </div>
+
+    <div id="container">
+      <div id="score">SCORE: 0</div>
+      <canvas id="game" width="360" height="360"></canvas>
+
+      <!-- INITIAL SCREEN -->
+      <div id="initialScreen" class="overlay">
+        <h1 style="font-size:48px;margin:0;">🐍</h1>
+        <h3 style="margin:10px 0;">Snake on Base</h3>
+        <p style="opacity:0.7;font-size:14px;margin-bottom:20px;">Connect your wallet to play</p>
+        <button id="connectBtn" onclick="showWalletSelect()">CONNECT WALLET</button>
+      </div>
+
+      <!-- WALLET SELECTION -->
+      <div id="walletSelect" class="overlay" style="display:none;">
+        <h3 style="margin:0 0 10px 0;">Choose Your Wallet</h3>
+        <div class="wallet-grid">
+          <button class="wallet-btn" onclick="connectWallet('metamask')">
+            <span class="wallet-icon">🦊</span><span>MetaMask</span>
+          </button>
+          <button class="wallet-btn" onclick="connectWallet('okx')">
+            <span class="wallet-icon">⭕</span><span>OKX Wallet</span>
+          </button>
+          <button class="wallet-btn" onclick="connectWallet('coinbase')">
+            <span class="wallet-icon">🔵</span><span>Coinbase</span>
+          </button>
+          <button class="wallet-btn" onclick="connectWallet('rabby')">
+            <span class="wallet-icon">🐰</span><span>Rabby</span>
+          </button>
+        </div>
+        <div class="loading" id="walletLoading">Connecting...</div>
+        <button class="back-btn" onclick="backToInitial()">← Back</button>
+      </div>
+
+      <!-- MINT SCREEN -->
+      <div id="mintScreen" class="overlay" style="display:none;">
+        <div class="mint-box">
+          <h3>🎫 Snake Access Pass</h3>
+          <p class="mint-detail">You need an Access Pass to play the game</p>
+          <div class="price">0.00003 ETH</div>
+          <p class="mint-detail">✨ One-time mint • Play forever</p>
+          <p class="mint-detail">🔗 Base Network</p>
+        </div>
+        <button id="mintBtn" onclick="mintNFT()">MINT NOW</button>
+        <div class="loading" id="mintLoading">Processing transaction...</div>
+        <button class="back-btn" onclick="disconnectWallet()">Disconnect Wallet</button>
+      </div>
+
+      <!-- GAME MENU -->
+      <div id="menu" class="overlay" style="display:none;">
+        <h3 style="margin:0 0 20px 0;">Ready to Play!</h3>
+        <button onclick="startGame()" style="background:#4CAF50;padding:15px 50px;font-size:18px;">PLAY</button>
+        <button class="back-btn" onclick="disconnectWallet()">Disconnect Wallet</button>
+      </div>
+
+      <!-- GAME OVER -->
+      <div id="gameOver" class="overlay" style="display:none;">
+        <h2 style="margin:0;">GAME OVER</h2>
+        <p style="font-size:24px;margin:15px 0;">Score: <span id="finalScore">0</span></p>
+        <div id="newHighMsg" style="display:none;color:#FFD700;font-size:13px;margin:-8px 0 4px;">🏆 New personal best!</div>
+        <button onclick="startGame()" style="background:#4CAF50;padding:15px 40px;">PLAY AGAIN</button>
+        <button class="back-btn" onclick="backToMenu()">← Menu</button>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div id="controls">
+      <div class="pad">
+        <div></div><button class="ctrl" onclick="setDir(0,-1)">⬆️</button><div></div>
+        <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
+        <button class="ctrl boost" ontouchstart="boostOn()" ontouchend="boostOff()">⚡</button>
+        <button class="ctrl" onclick="setDir(1,0)">➡️</button>
+        <div></div><button class="ctrl" onclick="setDir(0,1)">⬇️</button><div></div>
+      </div>
     </div>
   </div>
 
-  <!-- Content -->
-  <div id="content">
-    
-    <!-- HOME PAGE -->
-    <div id="homePage" class="page active">
-      <div class="hero">
-        <h2>Snake on Base</h2>
-        <p>Classic arcade game on blockchain</p>
-        <button class="play-btn" onclick="handlePlayClick()">PLAY NOW</button>
-      </div>
+  <!-- ===== LEADERBOARD TAB ===== -->
+  <div id="leaderboardPage" class="tab-page">
+    <div id="lbHeader">
+      <h2>🏆 Leaderboard</h2>
+      <p>Top scores on Base</p>
+    </div>
 
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-value" id="highScore">0</div>
-          <div class="stat-label">High Score</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="gamesPlayed">0</div>
-          <div class="stat-label">Games Played</div>
-        </div>
+    <div class="lb-your-score" id="yourScoreBox">
+      <div>
+        <div class="label">YOUR BEST SCORE</div>
+        <div class="val" id="yourBestScore">—</div>
       </div>
-
-      <div class="info-card">
-        <h3>How to Play</h3>
-        <ul>
-          <li>Use arrow keys or on-screen buttons</li>
-          <li>Press Space or center button to boost</li>
-          <li>Eat food to grow and score points</li>
-          <li>Don't hit walls or yourself!</li>
-        </ul>
-      </div>
-
-      <div class="info-card">
-        <h3>Access Pass</h3>
-        <ul>
-          <li>Mint once: 0.00003 ETH</li>
-          <li>Play unlimited games forever</li>
-          <li>Compete on global leaderboard</li>
-        </ul>
+      <div style="text-align:right;">
+        <div class="label">YOUR RANK</div>
+        <div class="val" id="yourRank">—</div>
       </div>
     </div>
 
-    <!-- GAME PAGE -->
-    <div id="gamePage" class="page">
-      <div class="game-wrapper">
-        <!-- Start Screen -->
-        <div id="startScreen" class="start-screen">
-          <h2>Ready to Play?</h2>
-          <button class="start-btn" onclick="startGame()">START</button>
-        </div>
-        
-        <!-- Game -->
-        <div id="score">SCORE: 0</div>
-        <canvas id="game" width="360" height="360"></canvas>
-        <div id="controls">
-          <div class="pad">
-            <div></div><button class="ctrl" onclick="setDir(0,-1)">⬆️</button><div></div>
-            <button class="ctrl" onclick="setDir(-1,0)">⬅️</button>
-            <button class="ctrl boost" ontouchstart="boostOn()" ontouchend="boostOff()" onmousedown="boostOn()" onmouseup="boostOff()"></button>
-            <button class="ctrl" onclick="setDir(1,0)">➡️</button>
-            <div></div><button class="ctrl" onclick="setDir(0,1)">⬇️</button><div></div>
-          </div>
-        </div>
-      </div>
+    <div class="lb-list" id="lbList">
+      <div class="lb-empty">No scores yet. Play to get on the board!</div>
     </div>
-
-    <!-- LEADERBOARD PAGE -->
-    <div id="leaderboardPage" class="page">
-      <div class="leaderboard-header">
-        <h2>Leaderboard</h2>
-        <p>Top players this week</p>
-      </div>
-      <div class="leaderboard-list" id="leaderboardList">
-        <div class="empty-state">
-          <p>No scores yet. Be the first!</p>
-        </div>
-      </div>
-    </div>
-
   </div>
 
-  <!-- Bottom Navigation -->
+  <!-- BOTTOM NAV -->
   <div id="bottomNav">
-    <button class="nav-btn active" onclick="switchPage('home')">
-      <div class="nav-icon">🏠</div>
-      <div>Home</div>
+    <button class="nav-btn active" id="navHome" onclick="switchTab('game')">
+      <span class="nav-icon">🎮</span>
+      <span class="nav-label">HOME</span>
     </button>
-    <button class="nav-btn" onclick="switchPage('game')">
-      <div class="nav-icon">🎮</div>
-      <div>Play</div>
-    </button>
-    <button class="nav-btn" onclick="switchPage('leaderboard')">
-      <div class="nav-icon">🏆</div>
-      <div>Top</div>
+    <button class="nav-btn" id="navLB" onclick="switchTab('leaderboard')">
+      <span class="nav-icon">🏆</span>
+      <span class="nav-label">LEADERBOARD</span>
     </button>
   </div>
-</div>
 
-<!-- Wallet Modal -->
-<div id="walletModal" class="modal">
-  <div class="modal-content">
-    <h3>Choose Your Wallet</h3>
-    <div class="wallet-grid">
-      <button class="wallet-option" onclick="connectWallet('metamask')">
-        <div class="wallet-icon">🦊</div>
-        <div class="wallet-name">MetaMask</div>
-      </button>
-      <button class="wallet-option" onclick="connectWallet('okx')">
-        <div class="wallet-icon">⭕</div>
-        <div class="wallet-name">OKX</div>
-      </button>
-      <button class="wallet-option" onclick="connectWallet('coinbase')">
-        <div class="wallet-icon">🔵</div>
-        <div class="wallet-name">Coinbase</div>
-      </button>
-      <button class="wallet-option" onclick="connectWallet('rabby')">
-        <div class="wallet-icon">🐰</div>
-        <div class="wallet-name">Rabby</div>
-      </button>
-    </div>
-    <div class="loading" id="walletLoading">Connecting...</div>
-    <button class="modal-btn secondary" onclick="closeWalletModal()">Cancel</button>
-  </div>
-</div>
-
-<!-- Mint Modal -->
-<div id="mintModal" class="modal">
-  <div class="modal-content">
-    <h3>Mint Access Pass</h3>
-    <div class="mint-box">
-      <h3>Snake Access Pass</h3>
-      <p class="mint-detail">Play unlimited games forever</p>
-      <div class="price">0.00003 ETH</div>
-      <p class="mint-detail">✨ One-time purchase</p>
-      <p class="mint-detail">🔗 Base Network</p>
-    </div>
-    <button class="modal-btn" id="mintBtn" onclick="mintNFT()">MINT NOW</button>
-    <div class="loading" id="mintLoading">Processing...</div>
-    <button class="modal-btn secondary" onclick="closeMintModal()">Cancel</button>
-  </div>
-</div>
-
-<!-- Game Over Modal -->
-<div id="gameOverModal" class="modal">
-  <div class="modal-content gameover-content">
-    <h2>Game Over!</h2>
-    <div class="final-score" id="finalScore">0</div>
-    <button class="modal-btn" onclick="restartGame()">Play Again</button>
-    <button class="modal-btn secondary" onclick="closeGameOver()">Home</button>
-  </div>
 </div>
 
 <script>
-// Contract Details
+// ===== CONTRACT =====
 const CONTRACT_ADDRESS = "0x483BF7B4aE4Ffc5f45Dd72bB04A4939d70777c56";
 const MINT_PRICE = "30000000000000";
 const BASE_CHAIN_ID = "0x2105";
@@ -651,440 +434,348 @@ const BASE_CHAIN_ID = "0x2105";
 let userAddress = null;
 let hasNFT = false;
 
-// Game variables
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const grid = 18;
-const size = canvas.width / grid;
-let snake, food, dx, dy, loopId;
-let speed = 300;
-let score = 0;
-let spacePressed = false;
-let highScore = parseInt(localStorage.getItem('highScore')) || 0;
-let gamesPlayed = parseInt(localStorage.getItem('gamesPlayed')) || 0;
-
-// Sound Effects
-const eatSound = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBDGH0fPTgjMGHm7A7+OZUQ4SS6Pl7K1aEglDm9/zuXEfBDB+zPHWjT0HG2m98OScTgwPVKvn7bFeEQlEnODyvXAfBC1+y/HYjj4HHGq+8OWdUQ4QU6rm7bJfEglEnODyu3AeBDCAzvHajUAIHGu+8OWdUQ4QU6vm7bJfEgk=');
-
-// Update stats display
-function updateStatsDisplay() {
-  document.getElementById('highScore').textContent = highScore;
-  document.getElementById('gamesPlayed').textContent = gamesPlayed;
+// ===== SOUND ENGINE (Web Audio API) =====
+let audioCtx = null;
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
 }
-updateStatsDisplay();
-
-// Page Navigation
-function switchPage(page) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  
-  document.getElementById(page + 'Page').classList.add('active');
-  event.target.closest('.nav-btn').classList.add('active');
-  
-  if (page === 'leaderboard') {
-    loadLeaderboard();
-  }
+function playEat(){
+  try{
+    const ctx = getAudioCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'square';
+    o.frequency.setValueAtTime(300, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.08);
+    g.gain.setValueAtTime(0.15, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.12);
+  }catch(e){}
+}
+function playDie(){
+  try{
+    const ctx = getAudioCtx();
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.connect(g); g.connect(ctx.destination);
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(200, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.3);
+    g.gain.setValueAtTime(0.2, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+    o.start(ctx.currentTime);
+    o.stop(ctx.currentTime + 0.3);
+  }catch(e){}
 }
 
-// Handle Play Button Click from Home
-function handlePlayClick() {
-  if (!userAddress) {
-    openWalletModal();
-  } else if (!hasNFT) {
-    document.getElementById('mintModal').classList.add('active');
+// ===== TAB NAVIGATION =====
+function switchTab(tab){
+  document.getElementById('gamePage').classList.remove('active');
+  document.getElementById('leaderboardPage').classList.remove('active');
+  document.getElementById('navHome').classList.remove('active');
+  document.getElementById('navLB').classList.remove('active');
+  if(tab === 'game'){
+    document.getElementById('gamePage').classList.add('active');
+    document.getElementById('navHome').classList.add('active');
   } else {
-    switchPage('game');
+    document.getElementById('leaderboardPage').classList.add('active');
+    document.getElementById('navLB').classList.add('active');
+    renderLeaderboard();
   }
 }
 
-// Wallet Modals
-function openWalletModal() {
-  document.getElementById('walletModal').classList.add('active');
+// ===== LEADERBOARD LOGIC =====
+// Storage key: 'snakeLeaderboard' → array of {name, score} sorted desc
+// Personal best: 'snakeBest_<address>'
+
+function getLeaderboard(){
+  try{ return JSON.parse(localStorage.getItem('snakeLeaderboard') || '[]'); }
+  catch(e){ return []; }
 }
-function closeWalletModal() {
-  document.getElementById('walletModal').classList.remove('active');
+function saveLeaderboard(lb){
+  localStorage.setItem('snakeLeaderboard', JSON.stringify(lb));
 }
-function closeMintModal() {
-  document.getElementById('mintModal').classList.remove('active');
+function getPersonalBest(addr){
+  if(!addr) return 0;
+  return parseInt(localStorage.getItem('snakeBest_' + addr.toLowerCase()) || '0');
+}
+function setPersonalBest(addr, score){
+  localStorage.setItem('snakeBest_' + addr.toLowerCase(), score);
 }
 
-// Connect Wallet
-async function connectWallet(walletType) {
-  try {
+function submitScore(newScore){
+  if(!userAddress || newScore <= 0) return false;
+  const addr = userAddress.toLowerCase();
+  const shortAddr = userAddress.slice(0,6) + '...' + userAddress.slice(-4);
+  const lb = getLeaderboard();
+
+  // Check personal best
+  const personal = getPersonalBest(addr);
+  if(newScore <= personal) return false; // Not a new best, don't update
+
+  // Update personal best
+  setPersonalBest(addr, newScore);
+
+  // Remove old entry for this address if exists
+  const idx = lb.findIndex(e => e.addr === addr);
+  if(idx !== -1) lb.splice(idx, 1);
+
+  // Add new entry
+  lb.push({ addr, name: shortAddr, score: newScore });
+
+  // Sort descending, keep top 100
+  lb.sort((a,b) => b.score - a.score);
+  if(lb.length > 100) lb.length = 100;
+
+  saveLeaderboard(lb);
+  return true; // Was a new best
+}
+
+function renderLeaderboard(){
+  const lb = getLeaderboard();
+  const lbList = document.getElementById('lbList');
+  const addr = userAddress ? userAddress.toLowerCase() : null;
+  const personal = getPersonalBest(addr || '');
+
+  // Your stats
+  if(addr && personal > 0){
+    document.getElementById('yourBestScore').textContent = personal;
+    const rank = lb.findIndex(e => e.addr === addr);
+    document.getElementById('yourRank').textContent = rank !== -1 ? '#' + (rank+1) : '—';
+  } else {
+    document.getElementById('yourBestScore').textContent = '—';
+    document.getElementById('yourRank').textContent = '—';
+  }
+
+  if(lb.length === 0){
+    lbList.innerHTML = '<div class="lb-empty">No scores yet. Play to get on the board!</div>';
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  lbList.innerHTML = lb.slice(0, 20).map((entry, i) => {
+    const isMe = addr && entry.addr === addr;
+    const rankDisplay = i < 3 ? `<span>${medals[i]}</span>` : `<span>${i+1}</span>`;
+    return `
+      <div class="lb-row ${isMe ? 'me' : ''}">
+        <div class="lb-rank ${i===0?'top1':i===1?'top2':i===2?'top3':''}">${i < 3 ? medals[i] : i+1}</div>
+        <div class="lb-name">
+          ${entry.name}
+          ${isMe ? '<span class="you-badge">YOU</span>' : ''}
+        </div>
+        <div class="lb-score">${entry.score}</div>
+      </div>`;
+  }).join('');
+}
+
+// ===== WALLET FUNCTIONS =====
+function showWalletSelect(){
+  hideAllScreens();
+  document.getElementById('walletSelect').style.display='flex';
+}
+function backToInitial(){
+  hideAllScreens();
+  document.getElementById('initialScreen').style.display='flex';
+}
+
+async function connectWallet(walletType){
+  try{
     document.getElementById('walletLoading').classList.add('show');
-    
-    if (!window.ethereum) {
-      alert('❌ No Web3 wallet detected!');
+    if(!window.ethereum){
+      alert('❌ No Web3 wallet detected!\n\nPlease install MetaMask, OKX Wallet, Coinbase Wallet, or Rabby Wallet');
       document.getElementById('walletLoading').classList.remove('show');
       return;
     }
-
-    const accounts = await window.ethereum.request({ 
-      method: 'eth_requestAccounts' 
-    });
-    
-    if (!accounts || accounts.length === 0) {
-      throw new Error('No accounts found');
-    }
-
+    const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+    if(!accounts||accounts.length===0) throw new Error('No accounts found');
     userAddress = accounts[0];
-
-    const chainId = await window.ethereum.request({ method: 'eth_chainId' });
-    
-    if (chainId !== BASE_CHAIN_ID) {
-      try {
-        await window.ethereum.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: BASE_CHAIN_ID }],
-        });
-      } catch (switchError) {
-        if (switchError.code === 4902) {
-          await window.ethereum.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: BASE_CHAIN_ID,
-              chainName: 'Base',
-              nativeCurrency: { name: 'Ethereum', symbol: 'ETH', decimals: 18 },
-              rpcUrls: ['https://mainnet.base.org'],
-              blockExplorerUrls: ['https://basescan.org']
-            }]
-          });
-        } else {
-          throw new Error('Please switch to Base network');
-        }
+    const chainId = await window.ethereum.request({method:'eth_chainId'});
+    if(chainId !== BASE_CHAIN_ID){
+      try{
+        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:BASE_CHAIN_ID}]});
+      }catch(switchError){
+        if(switchError.code===4902){
+          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{
+            chainId:BASE_CHAIN_ID,chainName:'Base',
+            nativeCurrency:{name:'Ethereum',symbol:'ETH',decimals:18},
+            rpcUrls:['https://mainnet.base.org'],
+            blockExplorerUrls:['https://basescan.org']
+          }]});
+        }else throw new Error('Please switch to Base network');
       }
     }
-
     localStorage.setItem('connectedWallet', userAddress);
-    
-    document.getElementById('walletBtn').style.display = 'none';
-    document.getElementById('walletInfo').style.display = 'block';
-    document.getElementById('walletAddress').textContent = 
-      userAddress.slice(0,4) + '...' + userAddress.slice(-4);
-
+    document.getElementById('walletInfo').style.display='block';
+    document.getElementById('walletAddress').textContent=userAddress.slice(0,6)+'...'+userAddress.slice(-4);
     await checkNFTBalance();
-    closeWalletModal();
-    
-  } catch (error) {
-    console.error('Connection error:', error);
-    alert('Connection failed: ' + (error.message || 'Unknown error'));
+  }catch(error){
+    console.error(error);
+    alert('Connection failed: '+(error.message||'Unknown error'));
     document.getElementById('walletLoading').classList.remove('show');
   }
 }
 
-// Check NFT Balance
-async function checkNFTBalance() {
-  try {
-    const data = '0x70a08231' + '000000000000000000000000' + userAddress.slice(2);
-    
-    const result = await window.ethereum.request({
-      method: 'eth_call',
-      params: [{ to: CONTRACT_ADDRESS, data: data }, 'latest']
-    });
-
-    const balance = parseInt(result, 16);
+async function checkNFTBalance(){
+  try{
+    const data='0x70a08231'+'000000000000000000000000'+userAddress.slice(2);
+    const result=await window.ethereum.request({method:'eth_call',params:[{to:CONTRACT_ADDRESS,data},'latest']});
+    const balance=parseInt(result,16);
     document.getElementById('walletLoading').classList.remove('show');
-
-    if (balance > 0) {
-      hasNFT = true;
-    } else {
-      hasNFT = false;
-      document.getElementById('mintModal').classList.add('active');
-    }
-    
-  } catch (error) {
-    console.error('Balance check error:', error);
-    alert('Error checking NFT');
+    if(balance>0){ hasNFT=true; hideAllScreens(); document.getElementById('menu').style.display='flex'; }
+    else{ hasNFT=false; hideAllScreens(); document.getElementById('mintScreen').style.display='flex'; }
+  }catch(error){
+    console.error(error);
+    alert('Error checking NFT. Please try again.');
     document.getElementById('walletLoading').classList.remove('show');
   }
 }
 
-// Mint NFT
-async function mintNFT() {
-  try {
-    document.getElementById('mintBtn').disabled = true;
+async function mintNFT(){
+  try{
+    document.getElementById('mintBtn').disabled=true;
     document.getElementById('mintLoading').classList.add('show');
-
-    const data = '0x1249c58b';
-
-    const txHash = await window.ethereum.request({
-      method: 'eth_sendTransaction',
-      params: [{
-        from: userAddress,
-        to: CONTRACT_ADDRESS,
-        value: '0x' + parseInt(MINT_PRICE).toString(16),
-        data: data
-      }]
-    });
-
-    alert('🚀 Transaction sent! Waiting...');
-    await new Promise(resolve => setTimeout(resolve, 10000));
-    alert('🎉 Mint successful!');
-    
-    hasNFT = true;
-    closeMintModal();
-    switchPage('game');
-    
-  } catch (error) {
-    console.error('Mint error:', error);
-    if (error.code === 4001) {
-      alert('❌ Transaction cancelled');
-    } else {
-      alert('❌ Mint failed');
-    }
-  } finally {
-    document.getElementById('mintBtn').disabled = false;
+    const data='0x1249c58b';
+    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{
+      from:userAddress,to:CONTRACT_ADDRESS,
+      value:'0x'+parseInt(MINT_PRICE).toString(16),data
+    }]});
+    alert('🚀 Transaction sent!\nHash: '+txHash.slice(0,10)+'...\nWaiting for confirmation...');
+    await new Promise(r=>setTimeout(r,10000));
+    alert('🎉 Mint successful!\nYou can now play Snake on Base!');
+    hasNFT=true; hideAllScreens(); document.getElementById('menu').style.display='flex';
+  }catch(error){
+    console.error(error);
+    if(error.code===4001) alert('❌ Transaction cancelled');
+    else alert('❌ Mint failed: '+(error.message||'Unknown error'));
+  }finally{
+    document.getElementById('mintBtn').disabled=false;
     document.getElementById('mintLoading').classList.remove('show');
   }
 }
 
-// Game Functions
-function startGame() {
-  document.getElementById('startScreen').style.display = 'none';
-  document.getElementById('score').style.display = 'block';
-  canvas.style.display = 'block';
-  document.getElementById('controls').style.display = 'block';
-  
-  snake = [{x:9, y:9}];
-  dx = 1;
-  dy = 0;
-  score = 0;
-  updateScore();
-  food = spawnFood();
-
-  clearInterval(loopId);
-  loopId = setInterval(loop, speed);
+function disconnectWallet(){
+  localStorage.removeItem('connectedWallet');
+  userAddress=null; hasNFT=false;
+  document.getElementById('walletInfo').style.display='none';
+  hideAllScreens();
+  document.getElementById('initialScreen').style.display='flex';
 }
 
-function loop() {
-  const head = {x: snake[0].x + dx, y: snake[0].y + dy};
+window.addEventListener('load',async()=>{
+  const saved=localStorage.getItem('connectedWallet');
+  if(saved&&window.ethereum){
+    try{
+      const accounts=await window.ethereum.request({method:'eth_accounts'});
+      if(accounts.length>0&&accounts[0].toLowerCase()===saved.toLowerCase()){
+        userAddress=accounts[0];
+        document.getElementById('walletInfo').style.display='block';
+        document.getElementById('walletAddress').textContent=userAddress.slice(0,6)+'...'+userAddress.slice(-4);
+        await checkNFTBalance();
+      }
+    }catch(e){console.error(e);}
+  }
+});
 
-  if (head.x < 0 || head.y < 0 || head.x >= grid || head.y >= grid ||
-     snake.some(s => s.x === head.x && s.y === head.y)) {
+function hideAllScreens(){
+  ['initialScreen','walletSelect','mintScreen','menu','gameOver'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
+}
+function backToMenu(){
+  hideAllScreens();
+  document.getElementById('menu').style.display='flex';
+  canvas.style.display='none';
+  document.getElementById('controls').style.display='none';
+  document.getElementById('score').style.display='none';
+}
+
+// ===== GAME =====
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
+const grid=18;
+const size=canvas.width/grid;
+let snake,food,dx,dy,loopId;
+let speed=300;
+let score=0;
+let spacePressed=false;
+
+function startGame(){
+  hideAllScreens();
+  canvas.style.display="block";
+  document.getElementById("controls").style.display="block";
+  document.getElementById("score").style.display="block";
+  snake=[{x:9,y:9}];
+  dx=1;dy=0;
+  score=0;
+  updateScore();
+  food=spawnFood();
+  clearInterval(loopId);
+  loopId=setInterval(loop,speed);
+}
+
+function loop(){
+  const head={x:snake[0].x+dx,y:snake[0].y+dy};
+  if(head.x<0||head.y<0||head.x>=grid||head.y>=grid||snake.some(s=>s.x===head.x&&s.y===head.y)){
     clearInterval(loopId);
-    endGame();
+    playDie();
+    // Submit score to leaderboard
+    const isNewBest = submitScore(score);
+    document.getElementById('finalScore').textContent=score;
+    const newHighMsg = document.getElementById('newHighMsg');
+    if(isNewBest && score > 0){ newHighMsg.style.display='block'; }
+    else { newHighMsg.style.display='none'; }
+    document.getElementById("gameOver").style.display="flex";
     return;
   }
-
   snake.unshift(head);
-
-  if (head.x === food.x && head.y === food.y) {
+  if(head.x===food.x&&head.y===food.y){
     score++;
     updateScore();
-    eatSound.play().catch(e => console.log('Audio failed'));
-    food = spawnFood();
-  } else snake.pop();
-
+    playEat();
+    food=spawnFood();
+  }else snake.pop();
   draw();
 }
 
-function draw() {
-  const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-  gradient.addColorStop(0, '#1a1a2e');
-  gradient.addColorStop(1, '#16213e');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i < grid; i++) {
-    ctx.beginPath();
-    ctx.moveTo(i * size, 0);
-    ctx.lineTo(i * size, canvas.height);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(0, i * size);
-    ctx.lineTo(canvas.width, i * size);
-    ctx.stroke();
+function draw(){
+  ctx.fillStyle="#111";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.strokeStyle="#1a1a1a";
+  for(let i=0;i<grid;i++){
+    ctx.beginPath();ctx.moveTo(i*size,0);ctx.lineTo(i*size,canvas.height);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,i*size);ctx.lineTo(canvas.width,i*size);ctx.stroke();
   }
-
-  snake.forEach((s) => {
-    const snakeGradient = ctx.createLinearGradient(
-      s.x * size, s.y * size,
-      (s.x + 1) * size, (s.y + 1) * size
-    );
-    snakeGradient.addColorStop(0, '#667eea');
-    snakeGradient.addColorStop(1, '#764ba2');
-    ctx.fillStyle = snakeGradient;
-    ctx.fillRect(s.x * size + 1, s.y * size + 1, size - 2, size - 2);
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = '#667eea';
-  });
-  ctx.shadowBlur = 0;
-
-  ctx.fillStyle = '#4CAF50';
-  ctx.shadowBlur = 15;
-  ctx.shadowColor = '#4CAF50';
-  ctx.beginPath();
-  ctx.arc(
-    food.x * size + size / 2,
-    food.y * size + size / 2,
-    size / 2 - 2,
-    0,
-    Math.PI * 2
-  );
-  ctx.fill();
-  ctx.shadowBlur = 0;
+  ctx.fillStyle="#fff";
+  snake.forEach(s=>ctx.fillRect(s.x*size,s.y*size,size-1,size-1));
+  ctx.fillRect(food.x*size,food.y*size,size-1,size-1);
 }
 
-function spawnFood() {
-  return {x: Math.floor(Math.random() * grid), y: Math.floor(Math.random() * grid)};
-}
+function spawnFood(){return{x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};}
+function setDir(x,y){if(x!==-dx||y!==-dy){dx=x;dy=y;}}
+function boostOn(){clearInterval(loopId);loopId=setInterval(loop,120);}
+function boostOff(){clearInterval(loopId);loopId=setInterval(loop,speed);}
+function updateScore(){document.getElementById("score").innerText="SCORE: "+score;}
 
-function setDir(x, y) {
-  if (x !== -dx || y !== -dy) {
-    dx = x;
-    dy = y;
-  }
-}
-
-function boostOn() {
-  clearInterval(loopId);
-  loopId = setInterval(loop, 120);
-}
-
-function boostOff() {
-  clearInterval(loopId);
-  loopId = setInterval(loop, speed);
-}
-
-function updateScore() {
-  document.getElementById("score").textContent = "SCORE: " + score;
-}
-
-function endGame() {
-  gamesPlayed++;
-  localStorage.setItem('gamesPlayed', gamesPlayed);
-  
-  if (score > highScore) {
-    highScore = score;
-    localStorage.setItem('highScore', highScore);
-  }
-  
-  updateStatsDisplay();
-  saveScoreToLeaderboard(score);
-  
-  document.getElementById('finalScore').textContent = score;
-  document.getElementById('gameOverModal').classList.add('active');
-}
-
-function restartGame() {
-  document.getElementById('gameOverModal').classList.remove('active');
-  startGame();
-}
-
-function closeGameOver() {
-  document.getElementById('gameOverModal').classList.remove('active');
-  document.getElementById('startScreen').style.display = 'block';
-  document.getElementById('score').style.display = 'none';
-  canvas.style.display = 'none';
-  document.getElementById('controls').style.display = 'none';
-  switchPage('home');
-}
-
-// Leaderboard
-function saveScoreToLeaderboard(score) {
-  let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-  
-  leaderboard.push({
-    address: userAddress,
-    score: score,
-    timestamp: Date.now()
-  });
-  
-  leaderboard.sort((a, b) => b.score - a.score);
-  leaderboard = leaderboard.slice(0, 50);
-  
-  localStorage.setItem('leaderboard', JSON.stringify(leaderboard));
-}
-
-function loadLeaderboard() {
-  let leaderboard = JSON.parse(localStorage.getItem('leaderboard')) || [];
-  const list = document.getElementById('leaderboardList');
-  
-  if (leaderboard.length === 0) {
-    list.innerHTML = '<div class="empty-state"><p>No scores yet. Be the first!</p></div>';
-    return;
-  }
-  
-  let html = '';
-  leaderboard.slice(0, 10).forEach((entry, index) => {
-    const rankClass = index === 0 ? 'gold' : index === 1 ? 'silver' : index === 2 ? 'bronze' : '';
-    const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`;
-    html += `
-      <div class="leaderboard-item">
-        <div class="rank ${rankClass}">${medal}</div>
-        <div class="player-info">
-          <div class="player-address">${entry.address.slice(0,6)}...${entry.address.slice(-4)}</div>
-        </div>
-        <div class="player-score">${entry.score}</div>
-      </div>
-    `;
-  });
-  
-  list.innerHTML = html;
-}
-
-// Keyboard Controls
-document.addEventListener("keydown", e => {
-  if (e.key === "ArrowUp") {
-    e.preventDefault();
-    setDir(0, -1);
-  }
-  if (e.key === "ArrowDown") {
-    e.preventDefault();
-    setDir(0, 1);
-  }
-  if (e.key === "ArrowLeft") {
-    e.preventDefault();
-    setDir(-1, 0);
-  }
-  if (e.key === "ArrowRight") {
-    e.preventDefault();
-    setDir(1, 0);
-  }
-  if (e.key === " ") {
-    e.preventDefault();
-    if (!spacePressed) {
-      spacePressed = true;
-      boostOn();
-    }
-  }
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowUp"){e.preventDefault();setDir(0,-1);}
+  if(e.key==="ArrowDown"){e.preventDefault();setDir(0,1);}
+  if(e.key==="ArrowLeft"){e.preventDefault();setDir(-1,0);}
+  if(e.key==="ArrowRight"){e.preventDefault();setDir(1,0);}
+  if(e.key===" "){e.preventDefault();if(!spacePressed){spacePressed=true;boostOn();}}
+});
+document.addEventListener("keyup",e=>{
+  if(e.key===" "){e.preventDefault();spacePressed=false;boostOff();}
 });
 
-document.addEventListener("keyup", e => {
-  if (e.key === " ") {
-    e.preventDefault();
-    spacePressed = false;
-    boostOff();
-  }
-});
-
-// Wallet events
-if (window.ethereum) {
-  window.ethereum.on('accountsChanged', () => location.reload());
-  window.ethereum.on('chainChanged', () => location.reload());
+if(window.ethereum){
+  window.ethereum.on('accountsChanged',accounts=>{
+    if(accounts.length===0)disconnectWallet();else window.location.reload();
+  });
+  window.ethereum.on('chainChanged',()=>window.location.reload());
 }
-
-// Auto-connect
-window.addEventListener('load', async () => {
-  const savedWallet = localStorage.getItem('connectedWallet');
-  if (savedWallet && window.ethereum) {
-    try {
-      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-      if (accounts.length > 0 && accounts[0].toLowerCase() === savedWallet.toLowerCase()) {
-        userAddress = accounts[0];
-        document.getElementById('walletBtn').style.display = 'none';
-        document.getElementById('walletInfo').style.display = 'block';
-        document.getElementById('walletAddress').textContent = 
-          userAddress.slice(0,4) + '...' + userAddress.slice(-4);
-        await checkNFTBalance();
-      }
-    } catch (error) {
-      console.error('Auto-connect failed:', error);
-    }
-  }
-});
 </script>
 </body>
 </html>
