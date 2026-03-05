@@ -581,24 +581,57 @@ function backToInitial(){
   document.getElementById('initialScreen').style.display='flex';
 }
 
+function detectProvider(walletType){
+  // EIP-6963 / legacy provider detection per wallet
+  if(walletType === 'metamask'){
+    if(window.ethereum?.isMetaMask && !window.ethereum?.isOkxWallet) return window.ethereum;
+    // multiple providers (e.g. MetaMask + Coinbase coexist)
+    if(window.ethereum?.providers){
+      return window.ethereum.providers.find(p => p.isMetaMask && !p.isCoinbaseWallet) || null;
+    }
+    return window.ethereum?.isMetaMask ? window.ethereum : null;
+  }
+  if(walletType === 'okx'){
+    return window.okxwallet || window.ethereum?.isOkxWallet && window.ethereum || null;
+  }
+  if(walletType === 'coinbase'){
+    if(window.coinbaseWalletExtension) return window.coinbaseWalletExtension;
+    if(window.ethereum?.isCoinbaseWallet) return window.ethereum;
+    if(window.ethereum?.providers) return window.ethereum.providers.find(p=>p.isCoinbaseWallet)||null;
+    return null;
+  }
+  if(walletType === 'rabby'){
+    return window.ethereum?.isRabby ? window.ethereum : window.ethereum || null;
+  }
+  return window.ethereum || null;
+}
+
 async function connectWallet(walletType){
   try{
     document.getElementById('walletLoading').classList.add('show');
-    if(!window.ethereum){
-      alert('❌ No Web3 wallet detected!\n\nPlease install MetaMask, OKX Wallet, Coinbase Wallet, or Rabby Wallet');
+
+    const provider = detectProvider(walletType);
+
+    if(!provider){
+      const names = {metamask:'MetaMask',okx:'OKX Wallet',coinbase:'Coinbase Wallet',rabby:'Rabby'};
+      alert('❌ ' + (names[walletType]||'Wallet') + ' bulunamadı!\n\nLütfen tarayıcı eklentisinin kurulu ve aktif olduğundan emin ol.');
       document.getElementById('walletLoading').classList.remove('show');
       return;
     }
-    const accounts = await window.ethereum.request({method:'eth_requestAccounts'});
+
+    // Store chosen provider globally
+    window._activeProvider = provider;
+
+    const accounts = await provider.request({method:'eth_requestAccounts'});
     if(!accounts||accounts.length===0) throw new Error('No accounts found');
     userAddress = accounts[0];
-    const chainId = await window.ethereum.request({method:'eth_chainId'});
+    const chainId = await provider.request({method:'eth_chainId'});
     if(chainId !== BASE_CHAIN_ID){
       try{
-        await window.ethereum.request({method:'wallet_switchEthereumChain',params:[{chainId:BASE_CHAIN_ID}]});
+        await provider.request({method:'wallet_switchEthereumChain',params:[{chainId:BASE_CHAIN_ID}]});
       }catch(switchError){
         if(switchError.code===4902){
-          await window.ethereum.request({method:'wallet_addEthereumChain',params:[{
+          await provider.request({method:'wallet_addEthereumChain',params:[{
             chainId:BASE_CHAIN_ID,chainName:'Base',
             nativeCurrency:{name:'Ethereum',symbol:'ETH',decimals:18},
             rpcUrls:['https://mainnet.base.org'],
@@ -608,6 +641,7 @@ async function connectWallet(walletType){
       }
     }
     localStorage.setItem('connectedWallet', userAddress);
+    localStorage.setItem('connectedWalletType', walletType);
     document.getElementById('walletInfo').style.display='block';
     document.getElementById('walletAddress').textContent=userAddress.slice(0,6)+'...'+userAddress.slice(-4);
     await checkNFTBalance();
@@ -620,8 +654,9 @@ async function connectWallet(walletType){
 
 async function checkNFTBalance(){
   try{
+    const provider = window._activeProvider || window.ethereum;
     const data='0x70a08231'+'000000000000000000000000'+userAddress.slice(2);
-    const result=await window.ethereum.request({method:'eth_call',params:[{to:CONTRACT_ADDRESS,data},'latest']});
+    const result=await provider.request({method:'eth_call',params:[{to:CONTRACT_ADDRESS,data},'latest']});
     const balance=parseInt(result,16);
     document.getElementById('walletLoading').classList.remove('show');
     if(balance>0){ hasNFT=true; hideAllScreens(); document.getElementById('menu').style.display='flex'; }
@@ -635,10 +670,11 @@ async function checkNFTBalance(){
 
 async function mintNFT(){
   try{
+    const provider = window._activeProvider || window.ethereum;
     document.getElementById('mintBtn').disabled=true;
     document.getElementById('mintLoading').classList.add('show');
     const data='0x1249c58b';
-    const txHash=await window.ethereum.request({method:'eth_sendTransaction',params:[{
+    const txHash=await provider.request({method:'eth_sendTransaction',params:[{
       from:userAddress,to:CONTRACT_ADDRESS,
       value:'0x'+parseInt(MINT_PRICE).toString(16),data
     }]});
@@ -658,6 +694,8 @@ async function mintNFT(){
 
 function disconnectWallet(){
   localStorage.removeItem('connectedWallet');
+  localStorage.removeItem('connectedWalletType');
+  window._activeProvider = null;
   userAddress=null; hasNFT=false;
   document.getElementById('walletInfo').style.display='none';
   hideAllScreens();
@@ -666,10 +704,14 @@ function disconnectWallet(){
 
 window.addEventListener('load',async()=>{
   const saved=localStorage.getItem('connectedWallet');
-  if(saved&&window.ethereum){
+  const savedType=localStorage.getItem('connectedWalletType') || 'metamask';
+  if(saved){
+    const provider = detectProvider(savedType);
+    if(!provider) return;
     try{
-      const accounts=await window.ethereum.request({method:'eth_accounts'});
+      const accounts=await provider.request({method:'eth_accounts'});
       if(accounts.length>0&&accounts[0].toLowerCase()===saved.toLowerCase()){
+        window._activeProvider = provider;
         userAddress=accounts[0];
         document.getElementById('walletInfo').style.display='block';
         document.getElementById('walletAddress').textContent=userAddress.slice(0,6)+'...'+userAddress.slice(-4);
@@ -770,12 +812,16 @@ document.addEventListener("keyup",e=>{
   if(e.key===" "){e.preventDefault();spacePressed=false;boostOff();}
 });
 
-if(window.ethereum){
-  window.ethereum.on('accountsChanged',accounts=>{
-    if(accounts.length===0)disconnectWallet();else window.location.reload();
-  });
-  window.ethereum.on('chainChanged',()=>window.location.reload());
-}
+// Wallet event listeners - attach after load
+window.addEventListener('load', () => {
+  const p = window._activeProvider || window.ethereum;
+  if(p){
+    p.on('accountsChanged', accounts => {
+      if(accounts.length===0) disconnectWallet(); else window.location.reload();
+    });
+    p.on('chainChanged', () => window.location.reload());
+  }
+});
 </script>
 </body>
 </html>
