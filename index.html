@@ -79,19 +79,44 @@ body{
 
 /* GAME PAGE LAYOUT */
 #gamePage{
-  padding:0 0 80px 0;
+  padding:0;
   align-items:center;
   justify-content:flex-start;
+  overflow:hidden;
+  height:calc(100vh - 64px);
+  max-height:calc(100vh - 64px);
 }
 #gameHeader{
   width:100%;
   max-width:360px;
-  padding:12px 20px;
+  padding:10px 16px;
   display:flex;
   align-items:center;
   justify-content:space-between;
+  flex-shrink:0;
 }
 #gameHeader h2{margin:0;font-size:18px;}
+
+#gameArea{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:100%;
+  overflow:hidden;
+  position:relative; /* overlays anchor here */
+}
+
+.overlay{
+  position:absolute;inset:0;
+  background:rgba(0,0,0,.95);
+  display:flex;flex-direction:column;
+  justify-content:center;align-items:center;
+  gap:15px;
+  padding:20px;
+  z-index:20;
+}
 
 #container{
   width:360px;
@@ -126,16 +151,6 @@ canvas{
   z-index:10;
 }
 
-.overlay{
-  position:absolute;inset:0;
-  background:rgba(0,0,0,.85);
-  display:flex;flex-direction:column;
-  justify-content:center;align-items:center;
-  gap:15px;
-  padding:20px;
-  z-index:20;
-  min-height:360px;
-}
 button{
   padding:12px 24px;
   border:none;border-radius:8px;
@@ -322,13 +337,9 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
       </div>
     </div>
 
-    <div id="container">
-      <div id="score">SCORE: 0</div>
-      <canvas id="game" width="360" height="360"></canvas>
-      <!-- Touch overlay for swipe controls -->
-      <div id="touchOverlay"></div>
+    <div id="gameArea">
 
-      <!-- INITIAL SCREEN -->
+      <!-- OVERLAYS — fill full gameArea -->
       <div id="initialScreen" class="overlay">
         <img src="data:image/png;base64,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" style="width:72px;height:72px;border-radius:14px;" alt="Snake">
         <h3 style="margin:10px 0;">Snake on Base</h3>
@@ -336,7 +347,6 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
         <button id="connectBtn" onclick="showWalletSelect()">CONNECT WALLET</button>
       </div>
 
-      <!-- WALLET SELECTION -->
       <div id="walletSelect" class="overlay" style="display:none;">
         <h3 style="margin:0 0 10px 0;">Choose Your Wallet</h3>
         <div class="wallet-grid">
@@ -357,7 +367,6 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
         <button class="back-btn" onclick="backToInitial()">← Back</button>
       </div>
 
-      <!-- MINT SCREEN -->
       <div id="mintScreen" class="overlay" style="display:none;">
         <div class="mint-box">
           <h3>🎫 Snake Access Pass</h3>
@@ -371,14 +380,12 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
         <button class="back-btn" onclick="disconnectWallet()">Disconnect Wallet</button>
       </div>
 
-      <!-- GAME MENU -->
       <div id="menu" class="overlay" style="display:none;">
         <h3 style="margin:0 0 20px 0;">Ready to Play!</h3>
         <button onclick="startGame()" style="background:#4CAF50;padding:15px 50px;font-size:18px;">PLAY</button>
         <button class="back-btn" onclick="disconnectWallet()">Disconnect Wallet</button>
       </div>
 
-      <!-- GAME OVER -->
       <div id="gameOver" class="overlay" style="display:none;">
         <h2 style="margin:0;">GAME OVER</h2>
         <p style="font-size:24px;margin:15px 0;">Score: <span id="finalScore">0</span></p>
@@ -386,12 +393,18 @@ button:disabled{opacity:0.5;cursor:not-allowed;}
         <button onclick="startGame()" style="background:#4CAF50;padding:15px 40px;">PLAY AGAIN</button>
         <button class="back-btn" onclick="backToMenu()">← Menu</button>
       </div>
+
+    <div id="container">
+      <div id="score">SCORE: 0</div>
+      <canvas id="game" width="360" height="500"></canvas>
+      <div id="touchOverlay"></div>
     </div>
 
     <!-- Swipe hint (mobile only) -->
-    <div id="swipeHint" style="display:none;text-align:center;padding:10px 0;font-size:12px;color:#444;">
+    <div id="swipeHint" style="display:none;text-align:center;padding:8px 0;font-size:12px;color:#444;flex-shrink:0;">
       Swipe to move &nbsp;·&nbsp; Hold to boost ⚡
     </div>
+    </div><!-- end gameArea -->
   </div>
 
   <!-- ===== LEADERBOARD TAB ===== -->
@@ -744,8 +757,8 @@ function backToMenu(){
 // ===== GAME =====
 const canvas=document.getElementById("game");
 const ctx=canvas.getContext("2d");
-const grid=18;
-const size=canvas.width/grid;
+const COLS=18, ROWS=25;
+const cellSize=20; // 18*20=360, 25*20=500
 let snake,food,dx,dy,loopId;
 let speed=300;
 let score=0;
@@ -770,7 +783,7 @@ function startGame(){
 
 function loop(){
   const head={x:snake[0].x+dx,y:snake[0].y+dy};
-  if(head.x<0||head.y<0||head.x>=grid||head.y>=grid||snake.some(s=>s.x===head.x&&s.y===head.y)){
+  if(head.x<0||head.y<0||head.x>=COLS||head.y>=ROWS||snake.some(s=>s.x===head.x&&s.y===head.y)){
     clearInterval(loopId);
     playDie();
     // Submit score to leaderboard
@@ -796,16 +809,18 @@ function draw(){
   ctx.fillStyle="#111";
   ctx.fillRect(0,0,canvas.width,canvas.height);
   ctx.strokeStyle="#1a1a1a";
-  for(let i=0;i<grid;i++){
-    ctx.beginPath();ctx.moveTo(i*size,0);ctx.lineTo(i*size,canvas.height);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,i*size);ctx.lineTo(canvas.width,i*size);ctx.stroke();
+  for(let i=0;i<COLS;i++){
+    ctx.beginPath();ctx.moveTo(i*cellSize,0);ctx.lineTo(i*cellSize,canvas.height);ctx.stroke();
+  }
+  for(let i=0;i<ROWS;i++){
+    ctx.beginPath();ctx.moveTo(0,i*cellSize);ctx.lineTo(canvas.width,i*cellSize);ctx.stroke();
   }
   ctx.fillStyle="#fff";
-  snake.forEach(s=>ctx.fillRect(s.x*size,s.y*size,size-1,size-1));
-  ctx.fillRect(food.x*size,food.y*size,size-1,size-1);
+  snake.forEach(s=>ctx.fillRect(s.x*cellSize,s.y*cellSize,cellSize-1,cellSize-1));
+  ctx.fillRect(food.x*cellSize,food.y*cellSize,cellSize-1,cellSize-1);
 }
 
-function spawnFood(){return{x:Math.floor(Math.random()*grid),y:Math.floor(Math.random()*grid)};}
+function spawnFood(){return{x:Math.floor(Math.random()*COLS),y:Math.floor(Math.random()*ROWS)};}
 function setDir(x,y){if(x!==-dx||y!==-dy){dx=x;dy=y;}}
 function boostOn(){clearInterval(loopId);loopId=setInterval(loop,120);}
 function boostOff(){clearInterval(loopId);loopId=setInterval(loop,speed);}
@@ -829,15 +844,16 @@ document.addEventListener("keyup",e=>{
   let touchStartX = 0, touchStartY = 0;
   let holdTimer = null;
   let isBoosting = false;
-  const SWIPE_THRESHOLD = 20; // px — minimum swipe distance
-  const HOLD_DELAY = 180;     // ms — hold before boost kicks in
+  let dirChanged = false;
+  const SWIPE_THRESHOLD = 18; // px
+  const HOLD_DELAY = 250;     // ms
 
   overlay.addEventListener('touchstart', e => {
     e.preventDefault();
     const t = e.changedTouches[0];
     touchStartX = t.clientX;
     touchStartY = t.clientY;
-    // Start hold timer for boost
+    dirChanged = false;
     holdTimer = setTimeout(() => {
       isBoosting = true;
       boostOn();
@@ -845,32 +861,29 @@ document.addEventListener("keyup",e=>{
   }, {passive: false});
 
   overlay.addEventListener('touchmove', e => {
-    e.preventDefault(); // prevent page scroll while playing
+    e.preventDefault(); // critical — stops page scroll
+    if(dirChanged) return; // already changed direction this swipe
+    const t = e.changedTouches[0];
+    const ddx = t.clientX - touchStartX;
+    const ddy = t.clientY - touchStartY;
+    const absDx = Math.abs(ddx);
+    const absDy = Math.abs(ddy);
+    if(Math.max(absDx, absDy) < SWIPE_THRESHOLD) return;
+    // Cancel boost if user is swiping
+    clearTimeout(holdTimer);
+    if(isBoosting){ isBoosting = false; boostOff(); }
+    dirChanged = true;
+    if(absDx > absDy){
+      setDir(ddx > 0 ? 1 : -1, 0);
+    } else {
+      setDir(0, ddy > 0 ? 1 : -1);
+    }
   }, {passive: false});
 
   overlay.addEventListener('touchend', e => {
     e.preventDefault();
-    // Cancel hold boost timer
     clearTimeout(holdTimer);
-    if(isBoosting){
-      isBoosting = false;
-      boostOff();
-      return; // held finger = boost, don't change direction
-    }
-    // Swipe direction
-    const t = e.changedTouches[0];
-    const dx_ = t.clientX - touchStartX;
-    const dy_ = t.clientY - touchStartY;
-    const absDx = Math.abs(dx_);
-    const absDy = Math.abs(dy_);
-    if(Math.max(absDx, absDy) < SWIPE_THRESHOLD) return; // too short, ignore
-    if(absDx > absDy){
-      // Horizontal swipe
-      setDir(dx_ > 0 ? 1 : -1, 0);
-    } else {
-      // Vertical swipe
-      setDir(0, dy_ > 0 ? 1 : -1);
-    }
+    if(isBoosting){ isBoosting = false; boostOff(); }
   }, {passive: false});
 
   overlay.addEventListener('touchcancel', e => {
@@ -878,6 +891,13 @@ document.addEventListener("keyup",e=>{
     if(isBoosting){ isBoosting = false; boostOff(); }
   }, {passive: false});
 })();
+
+// Prevent body scroll during game on mobile
+document.addEventListener('touchmove', e => {
+  if(document.getElementById('touchOverlay').style.display === 'block'){
+    e.preventDefault();
+  }
+}, {passive: false});
 
 // Wallet event listeners - attach after load
 window.addEventListener('load', () => {
